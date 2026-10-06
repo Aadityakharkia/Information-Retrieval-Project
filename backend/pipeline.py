@@ -253,12 +253,12 @@ class HealthNestPipeline:
 
     def suggest_queries(self, prefix: str, limit: int = 8) -> List[str]:
         """
-        Comprehensive IR Auto-Suggest Engine.
+        Comprehensive IR Auto-Suggest Engine using Prefix Match & IR Term Vocabulary.
         Matches query prefixes against:
-        1. Popular medical topics & symptom phrases
-        2. Hinglish lexicon mappings (e.g. pet me dard, bukhar, sir dard)
-        3. Full Q&A corpus question titles
-        4. Unique document vocabulary terms
+        1. Concise health search terms & completions (e.g., diabetes, fever, stomach ache)
+        2. Core medical Q&A database questions
+        3. Hinglish lexicon mappings (e.g. pet me dard, bukhar, sir dard)
+        4. Dataset document vocabulary terms
         """
         if not prefix or len(prefix.strip()) < 1:
             return []
@@ -270,11 +270,33 @@ class HealthNestPipeline:
 
         import re
 
-        # Preset Core Medical Topics & Queries Pool
+        # Concise Health Search Terms & Standard Completions
+        short_completions = [
+            "diabetes",
+            "diabetes symptoms",
+            "what is diabetes",
+            "diabetes treatment & diet",
+            "fever remedies and treatment",
+            "fever dosage for adults",
+            "bukhar (fever)",
+            "stomach ache and acidity remedies",
+            "pet me dard (stomach pain)",
+            "headache relief and causes",
+            "sir me dard (headache)",
+            "high blood pressure management",
+            "insomnia and sleep remedies",
+            "skin rash and itching relief",
+            "paracetamol dosage",
+            "amoxicillin side effects",
+            "asthma symptoms and treatment",
+            "stroke warning signs"
+        ]
+
+        # Preset Core Medical Questions
         core_medical_queries = [
+            "What are the early symptoms of diabetes?",
             "What are the common remedies for fever and body ache?",
             "What is the recommended dosage for Paracetamol in adults?",
-            "What are the early symptoms of diabetes?",
             "How to manage high blood pressure naturally?",
             "What are common remedies for severe stomach ache and gastritis?",
             "How to improve sleep quality and overcome insomnia?",
@@ -283,48 +305,54 @@ class HealthNestPipeline:
             "How to treat skin rashes and itching at home?",
             "How to reduce high cholesterol levels through diet?",
             "What causes joint pain in fingers and knees?",
-            "What are the primary causes and treatments for asthma attacks?",
-            "fever remedies and treatment",
-            "fever dosage for adults",
-            "stomach ache and acidity remedies",
-            "headache relief and causes",
-            "high blood pressure management",
-            "diabetes blood sugar symptoms",
-            "insomnia and sleep remedies",
-            "skin rash and itching relief"
+            "What are the primary causes and treatments for asthma attacks?"
         ]
 
-        # 1. Match core medical queries pool
-        for q_item in core_medical_queries:
-            if clean_pfx in q_item.lower() and q_item not in seen:
-                seen.add(q_item)
-                suggestions.append(q_item)
-                if len(suggestions) >= limit:
-                    break
-
-        # 2. Match dataset question titles
-        if len(suggestions) < limit:
-            for chunk in self.chunks:
-                q_title = chunk.get("question", "")
-                clean_title = re.sub(r'\s*\(Case\s*#\d+\)', '', q_title).strip()
-                if clean_pfx in clean_title.lower() and clean_title not in seen:
-                    seen.add(clean_title)
-                    suggestions.append(clean_title)
+        # 1. Match short query completions where a word starts with prefix
+        for item in short_completions:
+            words = item.lower().split()
+            if any(w.startswith(clean_pfx) for w in words) or item.lower().startswith(clean_pfx):
+                if item not in seen:
+                    seen.add(item)
+                    suggestions.append(item)
                     if len(suggestions) >= limit:
-                        break
+                        return suggestions
+
+        # 2. Match core medical questions
+        for q_item in core_medical_queries:
+            q_words = q_item.lower().split()
+            if any(w.startswith(clean_pfx) for w in q_words) or clean_pfx in q_item.lower():
+                if q_item not in seen:
+                    seen.add(q_item)
+                    suggestions.append(q_item)
+                    if len(suggestions) >= limit:
+                        return suggestions
 
         # 3. Match Hinglish lexicon terms & translations
         if len(suggestions) < limit and hasattr(self, 'hinglish_expander'):
             for src_phrase, eng_terms in self.hinglish_expander.term_map.items():
-                if clean_pfx in src_phrase or any(clean_pfx in t for t in eng_terms):
+                if src_phrase.startswith(clean_pfx) or any(t.startswith(clean_pfx) for t in eng_terms):
                     phrase_label = f"{src_phrase} ({', '.join(eng_terms)})"
-                    if phrase_label not in seen and src_phrase not in seen:
+                    if src_phrase not in seen:
                         seen.add(src_phrase)
                         suggestions.append(src_phrase)
                         if len(suggestions) >= limit:
-                            break
+                            return suggestions
 
-        # 4. Match unstemmed words across entire corpus
+        # 4. Match dataset question titles
+        if len(suggestions) < limit:
+            for chunk in self.chunks:
+                q_title = chunk.get("question", "")
+                clean_title = re.sub(r'\s*\(Case\s*#\d+\)', '', q_title).strip()
+                t_words = clean_title.lower().split()
+                if any(w.startswith(clean_pfx) for w in t_words):
+                    if clean_title not in seen:
+                        seen.add(clean_title)
+                        suggestions.append(clean_title)
+                        if len(suggestions) >= limit:
+                            return suggestions
+
+        # 5. Match vocabulary terms across corpus
         if len(suggestions) < limit:
             for chunk in self.chunks:
                 words = chunk.get("text", "").split() + chunk.get("question", "").split()
@@ -334,7 +362,7 @@ class HealthNestPipeline:
                         seen.add(clean_w)
                         suggestions.append(clean_w)
                         if len(suggestions) >= limit:
-                            break
+                            return suggestions
 
         return suggestions[:limit]
 
