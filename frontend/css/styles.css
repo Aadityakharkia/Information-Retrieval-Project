@@ -382,21 +382,25 @@ nav a.active, nav a:hover {
   color: var(--text-dark);
 }
 
-/* Hero Right Image */
+/* Hero Right Image - Transparent Cutout Model Blending */
 .hero-image-wrapper {
   position: relative;
   width: 100%;
-  height: 520px;
-  border-radius: 36px;
-  overflow: hidden;
-  box-shadow: 0 25px 60px rgba(108, 92, 231, 0.18);
+  height: 540px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  overflow: visible;
   animation: floatSlow 10s infinite ease-in-out;
 }
 
 .hero-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  mix-blend-mode: multiply;
+  filter: drop-shadow(0 25px 40px rgba(108, 92, 231, 0.25));
 }
 
 /* Section 2: "Support That Truly Matters" Grid */
