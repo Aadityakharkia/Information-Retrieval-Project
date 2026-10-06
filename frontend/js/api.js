@@ -22,6 +22,14 @@ export async function askQuestion(payload) {
   return response.json();
 }
 
+export async function fetchSuggestions(prefix) {
+  if (!prefix || prefix.trim().length === 0) return [];
+  const response = await fetch(`${API_BASE}/api/suggest?q=${encodeURIComponent(prefix)}`);
+  if (!response.ok) return [];
+  const data = await response.json();
+  return data.suggestions || [];
+}
+
 export async function fetchLibrary({ page = 1, limit = 12, search = "", category = "" } = {}) {
   const params = new URLSearchParams({ page, limit, search, category });
   const response = await fetch(`${API_BASE}/api/library?${params}`);

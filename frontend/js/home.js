@@ -55,6 +55,60 @@ document.addEventListener("DOMContentLoaded", () => {
     window.location.href = targetUrl;
   }
 
+  // IR Concept Auto-Suggest Typeahead
+  const suggestDropdown = document.getElementById("suggestDropdown");
+  let debounceTimer = null;
+
+  if (searchInput && suggestDropdown) {
+    searchInput.addEventListener("input", (e) => {
+      clearTimeout(debounceTimer);
+      const val = e.target.value.trim();
+      if (val.length < 1) {
+        suggestDropdown.classList.remove("active");
+        suggestDropdown.innerHTML = "";
+        return;
+      }
+
+      debounceTimer = setTimeout(async () => {
+        try {
+          const { fetchSuggestions } = await import("./api.js");
+          const suggestions = await fetchSuggestions(val);
+          if (!suggestions || suggestions.length === 0) {
+            suggestDropdown.classList.remove("active");
+            suggestDropdown.innerHTML = "";
+            return;
+          }
+
+          suggestDropdown.innerHTML = "";
+          suggestions.forEach((item) => {
+            const div = document.createElement("div");
+            div.className = "suggest-item";
+            div.innerHTML = `
+              <span class="suggest-item-icon">🔍</span>
+              <span>${item}</span>
+            `;
+            div.addEventListener("click", () => {
+              searchInput.value = item;
+              suggestDropdown.classList.remove("active");
+              triggerSearch(item);
+            });
+            suggestDropdown.appendChild(div);
+          });
+
+          suggestDropdown.classList.add("active");
+        } catch (err) {
+          console.error("Auto-suggest error:", err);
+        }
+      }, 150);
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!suggestDropdown.contains(e.target) && e.target !== searchInput) {
+        suggestDropdown.classList.remove("active");
+      }
+    });
+  }
+
   if (btnSearchSubmit) {
     btnSearchSubmit.addEventListener("click", () => triggerSearch());
   }

@@ -97,6 +97,19 @@ def api_ask():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/api/suggest", methods=["GET"])
+def api_suggest():
+    """IR Auto-Suggest Endpoint based on Inverted Index Dictionary & Questions."""
+    q = request.args.get("q", "").strip()
+    limit = int(request.args.get("limit", 6))
+    if not q:
+        return jsonify({"prefix": "", "suggestions": []})
+
+    from backend.pipeline import suggest
+    results = suggest(q, limit=limit)
+    return jsonify({"prefix": q, "suggestions": results})
+
+
 @app.route("/api/search", methods=["GET"])
 def api_search():
     """Retrieval-only Search Endpoint (no LLM generation)."""

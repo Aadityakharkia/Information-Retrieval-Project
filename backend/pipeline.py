@@ -251,8 +251,53 @@ class HealthNestPipeline:
         }
 
 
+    def suggest_queries(self, prefix: str, limit: int = 6) -> List[str]:
+        """
+        IR Dictionary Prefix & Title Matching Auto-Suggest Engine.
+        Uses Inverted Index vocabulary and dataset questions.
+        """
+        if not prefix or len(prefix.strip()) < 1:
+            return []
+
+        self.initialize()
+        clean_pfx = prefix.strip().lower()
+        suggestions = []
+        seen = set()
+
+        import re
+
+        # 1. Match dataset question titles containing prefix
+        for chunk in self.chunks:
+            q_title = chunk.get("question", "")
+            clean_title = re.sub(r'\s*\(Case\s*#\d+\)', '', q_title).strip()
+            if clean_pfx in clean_title.lower() and clean_title not in seen:
+                seen.add(clean_title)
+                suggestions.append(clean_title)
+                if len(suggestions) >= limit:
+                    break
+
+        # 2. Match unstemmed words in dataset text starting with prefix
+        if len(suggestions) < limit:
+            for chunk in self.chunks:
+                words = chunk.get("text", "").split() + chunk.get("question", "").split()
+                for w in words:
+                    clean_w = "".join(c for c in w.lower() if c.isalnum())
+                    if clean_w.startswith(clean_pfx) and len(clean_w) > 2 and clean_w not in seen:
+                        seen.add(clean_w)
+                        suggestions.append(clean_w)
+                        if len(suggestions) >= limit:
+                            break
+                if len(suggestions) >= limit:
+                    break
+
+        return suggestions[:limit]
+
+
 # Singleton pipeline instance
 _pipeline_instance = HealthNestPipeline()
 
 def ask(question: str, **kwargs) -> Dict[str, Any]:
     return _pipeline_instance.ask(question, **kwargs)
+
+def suggest(prefix: str, limit: int = 6) -> List[str]:
+    return _pipeline_instance.suggest_queries(prefix, limit=limit)
