@@ -386,17 +386,16 @@ nav a.active, nav a:hover {
 .suggest-dropdown {
   display: none;
   position: absolute;
-  top: 100%;
-  left: 20px;
-  right: 20px;
-  margin-top: 8px;
+  top: calc(100% + 10px);
+  left: 0;
+  right: 0;
   background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(20px);
-  border-radius: 20px;
-  padding: 12px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+  border-radius: 24px;
+  padding: 14px;
+  box-shadow: 0 24px 60px rgba(108, 92, 231, 0.22);
   border: 1px solid var(--glass-border);
-  z-index: 100;
+  z-index: 999;
 }
 
 .suggest-dropdown.active {
@@ -407,11 +406,11 @@ nav a.active, nav a:hover {
 .suggest-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  border-radius: 12px;
-  font-size: 15px;
-  font-weight: 500;
+  gap: 14px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 600;
   color: var(--text-dark);
   cursor: pointer;
   transition: background 0.2s ease, transform 0.2s ease;
@@ -419,12 +418,14 @@ nav a.active, nav a:hover {
 
 .suggest-item:hover {
   background: #f1f5f9;
-  transform: translateX(4px);
+  color: var(--primary-purple);
+  transform: translateX(6px);
 }
 
 .suggest-item-icon {
   color: var(--primary-purple);
-  font-size: 14px;
+  display: flex;
+  align-items: center;
 }
 
 /* Hero Right Image - True Transparent PNG Cutout Model */

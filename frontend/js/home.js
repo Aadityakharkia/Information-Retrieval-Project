@@ -1,7 +1,9 @@
 /**
  * HealthNest Home Page Interactive Logic (home.js).
- * Redirects search queries to dedicated answer page /answer.html?q=...
+ * Handles search submission, preset cards, and live IR typeahead auto-suggest dropdown.
  */
+
+import { fetchSuggestions } from "./api.js";
 
 document.addEventListener("DOMContentLoaded", () => {
   const btnSettings = document.getElementById("btnSettings");
@@ -9,6 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnGetStarted = document.getElementById("btnGetStarted");
   const searchInput = document.getElementById("searchInput");
   const btnSearchSubmit = document.getElementById("btnSearchSubmit");
+  const suggestDropdown = document.getElementById("suggestDropdown");
 
   // Settings popover toggle
   if (btnSettings && settingsPopover) {
@@ -37,7 +40,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const q = queryText || searchInput.value.trim();
     if (!q) return;
 
-    // Save active settings to localStorage so answer page receives them
+    // Save active settings to localStorage
     const retriever = document.getElementById("settingRetriever") ? document.getElementById("settingRetriever").value : "hybrid";
     const topK = document.getElementById("settingTopK") ? document.getElementById("settingTopK").value : "5";
     const model = document.getElementById("settingModel") ? document.getElementById("settingModel").value : "llama3.2:1b";
@@ -55,10 +58,18 @@ document.addEventListener("DOMContentLoaded", () => {
     window.location.href = targetUrl;
   }
 
-  // IR Concept Auto-Suggest Typeahead
-  const suggestDropdown = document.getElementById("suggestDropdown");
-  let debounceTimer = null;
+  if (btnSearchSubmit) {
+    btnSearchSubmit.addEventListener("click", () => triggerSearch());
+  }
 
+  if (searchInput) {
+    searchInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") triggerSearch();
+    });
+  }
+
+  // Live IR Typeahead Auto-Suggest Input Event Handler
+  let debounceTimer = null;
   if (searchInput && suggestDropdown) {
     searchInput.addEventListener("input", (e) => {
       clearTimeout(debounceTimer);
@@ -71,7 +82,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
       debounceTimer = setTimeout(async () => {
         try {
-          const { fetchSuggestions } = await import("./api.js");
           const suggestions = await fetchSuggestions(val);
           if (!suggestions || suggestions.length === 0) {
             suggestDropdown.classList.remove("active");
@@ -84,7 +94,10 @@ document.addEventListener("DOMContentLoaded", () => {
             const div = document.createElement("div");
             div.className = "suggest-item";
             div.innerHTML = `
-              <span class="suggest-item-icon">🔍</span>
+              <svg class="suggest-item-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
               <span>${item}</span>
             `;
             div.addEventListener("click", () => {
@@ -99,23 +112,14 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (err) {
           console.error("Auto-suggest error:", err);
         }
-      }, 150);
+      }, 100);
     });
 
+    // Close dropdown on outside click
     document.addEventListener("click", (e) => {
       if (!suggestDropdown.contains(e.target) && e.target !== searchInput) {
         suggestDropdown.classList.remove("active");
       }
-    });
-  }
-
-  if (btnSearchSubmit) {
-    btnSearchSubmit.addEventListener("click", () => triggerSearch());
-  }
-
-  if (searchInput) {
-    searchInput.addEventListener("keypress", (e) => {
-      if (e.key === "Enter") triggerSearch();
     });
   }
 
