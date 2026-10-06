@@ -1,0 +1,67 @@
+# Hinglish / Hindi to English Medical Lexicon for HealthNest
+# Format: SourceTerm<tab>EnglishTerm(s) (comma-separated if multiple)
+# NOTE: Teammates must review and extend this dictionary for domain coverage.
+
+pet dard	stomach ache, abdominal pain
+pet me dard	stomach ache, abdominal pain
+sar dard	headache
+sir dard	headache
+sirdard	headache
+bukhar	fever, pyrexia
+buhar	fever
+fever	fever, pyrexia
+khaansi	cough
+khansi	cough
+jukam	cold, rhinitis
+jokham	cold, rhinitis
+gala kharab	sore throat, pharyngitis
+gale me kharab	sore throat
+thakan	fatigue, tiredness
+kamzori	weakness, fatigue
+chhakna	dizziness, vertigo
+chakkar	dizziness, vertigo
+ulti	vomiting, emesis
+jee ghabrana	nausea
+kheench	cramps, muscle spasm
+sojan	swelling, inflammation
+soojhan	swelling, inflammation
+jod dard	joint pain, arthritis
+gathiya	arthritis
+twacha	skin
+khujli	itching, pruritus
+daana	rash, lesion
+dane	rashes, lesions
+chhaley	ulcers, mouth sores
+chhale	ulcers, mouth sores
+kabz	constipation
+dast	diarrhea, loose motions
+pait kharab	diarrhea, upset stomach
+acidity	acidity, acid reflux, heartburn
+seene me jalan	heartburn, acid reflux
+saans phoolna	breathlessness, shortness of breath
+saans ki takleef	breathing difficulty, asthma
+dil ki dhadkan	heartbeat, palpitations
+high BP	hypertension, high blood pressure
+low BP	hypotension, low blood pressure
+sugar	diabetes, blood glucose
+madhumeh	diabetes
+motapa	obesity, overweight
+vazan kam	weight loss
+vazan badhna	weight gain
+neend na aana	insomnia, sleep disorder
+bhookh na lagna	loss of appetite, anorexia
+baal jhadna	hair loss, alopecia
+fefde	lungs
+gurdah	kidney
+gurde	kidneys
+jigar	liver
+khoon ki kami	anemia
+kanser	cancer
+daant dard	toothache
+kaan dard	earache
+aankh me dard	eye pain
+bache	pediatric, children
+garbhvati	pregnant, pregnancy
+dawai	medication, medicine, drug
+dawaiyaan	medications, drugs
+nuskha	home remedy, prescription

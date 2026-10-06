@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About & IR Report Card - HealthNest</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="cloud-bg"></div>
+  <div class="app-wrapper">
+    <header>
+      <a href="/" class="logo-group">
+        <div class="logo-asterisk">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+            <path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M4.93 19.07L19.07 4.93"/>
+          </svg>
+        </div>
+        <span class="logo-text">HealthNest</span>
+      </a>
+      <nav>
+        <a href="/">Home</a>
+        <a href="/library">Library</a>
+        <a href="/about" class="active">About</a>
+      </nav>
+      <div class="nav-actions">
+        <a href="/" class="btn-get-started" style="text-decoration:none;">Ask Question</a>
+      </div>
+    </header>
+
+    <section style="padding: 40px 0;">
+      <h1 style="font-size: 36px; margin-bottom: 16px;">Information Retrieval System Architecture</h1>
+      <p style="font-size: 18px; color: var(--text-muted); margin-bottom: 40px;">
+        HealthNest implements core IR principles from lectures to ensure verifiable, trustworthy medical Q&A.
+      </p>
+
+      <!-- 9-Step Pipeline Explanation -->
+      <div class="answer-card">
+        <h2>The 9-Step HealthNest Pipeline</h2>
+        <ol style="margin-left: 20px; margin-top: 16px; line-height: 2;">
+          <li><strong>CSV Dataset Loading:</strong> Flexible schema reader mapping Kaggle Q&A CSV rows.</li>
+          <li><strong>Document Chunking:</strong> Sentence windowing & token granularity control.</li>
+          <li><strong>Text Normalization & Hinglish Lexicon:</strong> Devanagari regex + synonym expansion.</li>
+          <li><strong>Hand-written Inverted Index:</strong> Question & Body multi-zone postings lists.</li>
+          <li><strong>SMART lnc.ltc TF-IDF Vector Space Model:</strong> Log-tf, IDF, cosine normalization.</li>
+          <li><strong>Dense Embeddings:</strong> SentenceTransformers cosine similarity via matrix operations.</li>
+          <li><strong>Reciprocal Rank Fusion (RRF):</strong> Hybrid rank aggregation ($k=60$).</li>
+          <li><strong>Selective Abstention:</strong> Evidence strength thresholding ("I don't know").</li>
+          <li><strong>Fact Verification Checker:</strong> Sentence-level sparse cosine & dosage number verification.</li>
+        </ol>
+      </div>
+
+      <!-- Evaluation Report Card -->
+      <div class="answer-card" style="margin-top: 32px;">
+        <h2>System Report Card (Evaluation Results)</h2>
+        <p style="color: var(--text-muted); margin-bottom: 20px;">Evaluated on dev & test sets across retrieval models, LLM sizes, and Hinglish queries.</p>
+        
+        <div id="evalContainer">
+          <p>Loading evaluation metrics summary...</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script type="module" src="js/about.js"></script>
+</body>
+</html>

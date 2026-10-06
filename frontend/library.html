@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Library Browse - HealthNest</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="cloud-bg"></div>
+  <div class="app-wrapper">
+    <header>
+      <a href="/" class="logo-group">
+        <div class="logo-asterisk">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+            <path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M4.93 19.07L19.07 4.93"/>
+          </svg>
+        </div>
+        <span class="logo-text">HealthNest</span>
+      </a>
+      <nav>
+        <a href="/">Home</a>
+        <a href="/library" class="active">Library</a>
+        <a href="/about">About</a>
+      </nav>
+      <div class="nav-actions">
+        <a href="/" class="btn-get-started" style="text-decoration:none;">Ask Question</a>
+      </div>
+    </header>
+
+    <section style="padding: 40px 0;">
+      <h1 style="font-size: 36px; margin-bottom: 24px;">Browse Health Q&A Corpus</h1>
+      
+      <!-- Filter Controls -->
+      <div style="display: flex; gap: 16px; margin-bottom: 32px;">
+        <input type="text" id="libSearchInput" placeholder="Filter library chunks..." style="flex:1; padding: 14px 20px; border-radius: var(--radius-pill); border:1px solid #cbd5e0; font-size:16px;">
+        <button id="btnLibSearch" class="btn-get-started">Search</button>
+      </div>
+
+      <!-- Chunks Grid -->
+      <div id="libraryGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;"></div>
+
+      <!-- Pagination -->
+      <div style="display: flex; justify-content: center; gap: 16px; margin-top: 40px; align-items: center;">
+        <button id="btnPrevPage" class="btn-get-started" style="background:#a0aec0;">Previous</button>
+        <span id="pageIndicator" style="font-weight: bold;">Page 1</span>
+        <button id="btnNextPage" class="btn-get-started">Next</button>
+      </div>
+    </section>
+  </div>
+
+  <script type="module" src="js/library.js"></script>
+</body>
+</html>
