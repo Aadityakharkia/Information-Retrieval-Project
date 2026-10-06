@@ -45,3 +45,4 @@ data/embeddings/*.npy
 data/embeddings/*.faiss
 data/processed/*.pkl
 data/llm_cache.json
+data/embeddings/chunk_ids.json

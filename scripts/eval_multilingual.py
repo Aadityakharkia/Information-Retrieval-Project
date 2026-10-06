@@ -7,11 +7,11 @@ import logging
 from typing import List, Dict, Any
 import numpy as np
 
-from src.data_processor import load_chunks
-from src.retrievers.inverted_index import InvertedIndexRetriever
-from src.retrievers.dense_retriever import DenseRetriever
-from src.config import DATA_DIR, MULTILINGUAL_DENSE_MODEL, DEFAULT_DENSE_MODEL
-from src.evaluation.metrics import precision_at_k, recall_at_k, reciprocal_rank
+from medrag.data.processor import load_chunks
+from medrag.retrieval.inverted_index import InvertedIndexRetriever
+from medrag.retrieval.dense import DenseRetriever
+from medrag.config import DATA_DIR, MULTILINGUAL_DENSE_MODEL, DEFAULT_DENSE_MODEL
+from medrag.evaluation.metrics import precision_at_k, recall_at_k, reciprocal_rank
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)

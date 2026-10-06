@@ -14,8 +14,8 @@ import numpy as np
 import faiss
 from sentence_transformers import SentenceTransformer
 
-from src.retrievers.base import BaseRetriever
-from src.config import (
+from medrag.retrieval.base import BaseRetriever
+from medrag.config import (
     DEFAULT_DENSE_MODEL,
     MULTILINGUAL_DENSE_MODEL,
     EMBEDDINGS_DIR,

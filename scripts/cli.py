@@ -5,8 +5,8 @@ import sys
 import argparse
 from typing import Optional
 
-from src.pipeline import TrustworthyMedicalRAGPipeline
-from src.config import SUPPORTED_GENERATOR_MODELS
+from medrag.pipeline import TrustworthyMedicalRAGPipeline
+from medrag.config import SUPPORTED_GENERATOR_MODELS
 
 
 def print_banner():

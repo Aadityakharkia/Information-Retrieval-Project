@@ -152,63 +152,29 @@ Evaluated on stratified test queries across 15 medical query types (`qtype`):
 
 ## 6. Installation & Quickstart
 
-### Prerequisites
-- Python 3.10+ (Tested on Python 3.11)
-- Mac (Apple Silicon / Intel) or Linux
+Requires Python 3.10+ (tested on 3.11).
 
-### Step 1: Clone and Environment Setup
 ```bash
-git clone <repo-url>
-cd IR_midsem
-
-# Create virtual environment
-python3 -m venv .venv
-source .venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
+make install        # venv + editable install with dev extras
+make data           # chunk MedQuAD (needs data/train.csv) -> data/processed/
+make test           # 7 unit tests
+make serve          # API + bundled UI at http://127.0.0.1:8000  (API docs: /docs)
+make cli            # interactive terminal client with IR inspection
 ```
 
-### Step 2: Dataset Extraction & Indexing
-The preprocessed data and indices are automatically loaded on first launch, or you can build them directly:
-```bash
-# 1. Process MedQuAD into 200w/30w chunks & test queries
-python3 -m src.data_processor
+Optional: `export GROQ_API_KEY=...` for LLM generation (otherwise a deterministic offline generator is used; see `.env.example`).
 
-# 2. Run unit test suite
-pytest tests/test_ir.py
+Reproduce benchmarks:
+```bash
+make eval-retrieval      # P@k, R@k, MRR, MAP
+make eval-threshold      # refusal threshold sweep
+make eval-multilingual   # English vs Hinglish
 ```
 
-### Step 3: Interactive Web Demo
-Start the FastAPI server:
-```bash
-python3 -m uvicorn app.server:app --host 127.0.0.1 --port 8000
-```
-Open **[http://127.0.0.1:8000](http://127.0.0.1:8000)** in your browser to experience:
-- Live query execution and preset clinical chips
-- Deep IR Inspection drawer (token stems, postings list viewer, SMART `lnc.ltc` weights)
-- Sentence-level citation verification cards with real-time cosine scores!
-
-### Step 4: Interactive Terminal CLI
-```bash
-# Interactive Mode
-python3 cli.py
-
-# Single-Query Mode with IR Inspection
-python3 cli.py --query "What are the symptoms of Lymphocytic Choriomeningitis?" --retriever inverted_index
-```
-
-### Step 5: Reproduce Benchmark Evaluations
-```bash
-# 1. Full retrieval evaluation (P@K, R@K, MRR, MAP)
-python3 -m src.evaluation.run_retrieval_eval 100
-
-# 2. Refusal threshold safety evaluation
-python3 -m src.evaluation.run_threshold_eval
-
-# 3. Multilingual Hinglish evaluation
-python3 -m src.evaluation.run_multilingual_eval
-```
+### Frontend integration
+The backend is a standalone REST API; the UI in `frontend/` is just a bundled demo and can be replaced.
+See **[docs/API.md](docs/API.md)** for the request/response contract (typed in `medrag/api/schemas.py`).
+Set `CORS_ORIGINS` to your frontend's dev origin (e.g. `http://localhost:5173`).
 
 ---
 
@@ -216,41 +182,22 @@ python3 -m src.evaluation.run_multilingual_eval
 
 ```
 IR_midsem/
-├── data/
-│   ├── train.csv                # Raw MedQuAD NIH clinical Q&A
-│   ├── processed/
-│   │   ├── medquad_chunks.json  # 25,643 chunks (200 words, 30w overlap)
-│   │   ├── test_queries.json    # 300 stratified test questions
-│   │   ├── inverted_index.pkl   # Serialized lnc.ltc index
-│   │   └── bm25_index.pkl       # Serialized BM25 index
-│   └── embeddings/
-│       └── dense_embeddings.npy # Cached all-MiniLM-L6-v2 embeddings
-├── src/
-│   ├── config.py                # Hyperparameters, thresholds & model configs
-│   ├── text_processing.py       # Porter Stemmer, stopword filtering, sentence splitter
-│   ├── data_processor.py        # Deduplication, grouping, sliding window chunking
-│   ├── retrievers/
-│   │   ├── base.py              # BaseRetriever abstract interface
-│   │   ├── inverted_index.py    # Inverted Index (lnc.ltc, postings, min-heap)
-│   │   ├── bm25_retriever.py    # Okapi BM25 implementation
-│   │   ├── dense_retriever.py   # SentenceTransformer & FAISS
-│   │   └── hybrid_retriever.py  # Reciprocal Rank Fusion (RRF)
-│   ├── generator.py             # Refusal gate, [C#] formatting, Groq & fallback
-│   ├── citation_checker.py      # TF-IDF Cosine & Concept Coverage auditor
-│   ├── pipeline.py              # End-to-end pipeline coordinator
-│   └── evaluation/
-│       ├── metrics.py           # Precision, Recall, MRR, MAP implementation
-│       ├── run_retrieval_eval.py# Retrieval benchmarking
-│       ├── run_threshold_eval.py# Refusal threshold sweep
-│       └── run_multilingual_eval.py # Multilingual Hinglish evaluation
-├── app/
-│   ├── server.py                # FastAPI backend & inspection endpoints
-│   └── static/                  # Vanilla HTML, modern CSS & JS UI
-├── cli.py                       # Terminal CLI with step-by-step diagnostics
-├── tests/
-│   └── test_ir.py               # 7 automated unit tests
-├── requirements.txt             # Dependency specification
-└── README.md                    # System documentation
+├── medrag/                      # Python package (all backend logic)
+│   ├── config.py                # Paths, hyperparameters, thresholds, env settings
+│   ├── pipeline.py              # Orchestrates retrieve -> refuse -> generate -> verify
+│   ├── nlp/text.py              # Tokenizer, Porter stemmer, stopwords, sentence splitter
+│   ├── data/processor.py        # Dedup, 200w/30w chunking, stratified test split
+│   ├── retrieval/               # base interface + inverted_index, bm25, dense, hybrid (RRF)
+│   ├── generation/generator.py  # Refusal gate, [C#] prompting, Groq + offline fallback
+│   ├── verification/            # Sentence-level citation checker
+│   ├── evaluation/metrics.py    # P@k, R@k, MRR, MAP
+│   └── api/                     # FastAPI app (main.py) + typed schemas.py
+├── scripts/                     # CLI + evaluation entry points
+├── frontend/                    # Bundled static demo UI (replaceable)
+├── tests/                       # Unit tests
+├── docs/                        # API contract, report draft, demo script
+├── data/                        # Dataset + generated artifacts (large files git-ignored)
+├── Makefile  pyproject.toml  requirements.txt  .env.example
 ```
 
 ---

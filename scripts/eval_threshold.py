@@ -6,11 +6,11 @@ import logging
 from typing import List, Dict, Any
 import numpy as np
 
-from src.data_processor import load_chunks, load_test_queries
-from src.retrievers.inverted_index import InvertedIndexRetriever
-from src.retrievers.bm25_retriever import BM25Retriever
-from src.generator import MedicalAnswerGenerator
-from src.config import DATA_DIR
+from medrag.data.processor import load_chunks, load_test_queries
+from medrag.retrieval.inverted_index import InvertedIndexRetriever
+from medrag.retrieval.bm25 import BM25Retriever
+from medrag.generation.generator import MedicalAnswerGenerator
+from medrag.config import DATA_DIR
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)

@@ -12,8 +12,8 @@ import logging
 from typing import List, Dict, Any, Tuple, Optional
 from collections import Counter
 
-from src.text_processing import split_into_sentences, tokenize_and_stem
-from src.config import CITATION_COSINE_SUPPORT_THRESHOLD, CITATION_UNSUPPORTED_THRESHOLD
+from medrag.nlp.text import split_into_sentences, tokenize_and_stem
+from medrag.config import CITATION_COSINE_SUPPORT_THRESHOLD, CITATION_UNSUPPORTED_THRESHOLD
 
 logger = logging.getLogger(__name__)
 

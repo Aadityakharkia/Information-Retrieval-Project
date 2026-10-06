@@ -1,12 +1,12 @@
 """Unit tests for Information Retrieval and Citation Verification components.
 """
 import pytest
-from src.text_processing import tokenize, tokenize_and_stem, compute_tf, split_into_sentences
-from src.data_processor import chunk_text
-from src.retrievers.inverted_index import InvertedIndexRetriever
-from src.retrievers.bm25_retriever import BM25Retriever
-from src.citation_checker import SentenceCitationChecker
-from src.generator import MedicalAnswerGenerator
+from medrag.nlp.text import tokenize, tokenize_and_stem, compute_tf, split_into_sentences
+from medrag.data.processor import chunk_text
+from medrag.retrieval.inverted_index import InvertedIndexRetriever
+from medrag.retrieval.bm25 import BM25Retriever
+from medrag.verification.citation_checker import SentenceCitationChecker
+from medrag.generation.generator import MedicalAnswerGenerator
 
 
 def test_chunking_sliding_window():

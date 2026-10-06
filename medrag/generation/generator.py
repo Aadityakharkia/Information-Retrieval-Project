@@ -13,7 +13,7 @@ import logging
 from typing import List, Dict, Any, Optional, Tuple
 from pathlib import Path
 
-from src.config import (
+from medrag.config import (
     GROQ_API_KEY,
     DEFAULT_GENERATOR_MODEL,
     SUPPORTED_GENERATOR_MODELS,

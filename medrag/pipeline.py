@@ -10,14 +10,14 @@ Orchestrates:
 import logging
 from typing import List, Dict, Any, Optional
 
-from src.data_processor import load_chunks
-from src.retrievers.inverted_index import InvertedIndexRetriever
-from src.retrievers.bm25_retriever import BM25Retriever
-from src.retrievers.dense_retriever import DenseRetriever
-from src.retrievers.hybrid_retriever import HybridRetriever
-from src.generator import MedicalAnswerGenerator, get_default_threshold_for_retriever
-from src.citation_checker import SentenceCitationChecker
-from src.config import DEFAULT_TOP_K
+from medrag.data.processor import load_chunks
+from medrag.retrieval.inverted_index import InvertedIndexRetriever
+from medrag.retrieval.bm25 import BM25Retriever
+from medrag.retrieval.dense import DenseRetriever
+from medrag.retrieval.hybrid import HybridRetriever
+from medrag.generation.generator import MedicalAnswerGenerator, get_default_threshold_for_retriever
+from medrag.verification.citation_checker import SentenceCitationChecker
+from medrag.config import DEFAULT_TOP_K
 
 logger = logging.getLogger(__name__)
 

@@ -11,7 +11,7 @@ from typing import List, Dict, Any, Tuple
 import pandas as pd
 import numpy as np
 
-from src.config import (
+from medrag.config import (
     RAW_DATA_PATH,
     PROCESSED_DIR,
     CHUNKS_PATH,

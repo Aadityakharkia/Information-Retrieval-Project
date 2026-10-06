@@ -7,6 +7,12 @@ import os
 # Project root
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Serving / API settings (override via environment variables)
+FRONTEND_DIR = Path(os.environ.get("FRONTEND_DIR", BASE_DIR / "frontend"))
+CORS_ORIGINS = [
+    o.strip() for o in os.environ.get("CORS_ORIGINS", "*").split(",") if o.strip()
+]
+
 # Data paths
 DATA_DIR = BASE_DIR / "data"
 RAW_DATA_PATH = DATA_DIR / "train.csv"

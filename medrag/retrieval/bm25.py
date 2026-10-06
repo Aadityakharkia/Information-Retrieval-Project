@@ -7,9 +7,9 @@ import logging
 from collections import defaultdict, Counter
 from typing import List, Dict, Any, Tuple
 
-from src.retrievers.base import BaseRetriever
-from src.text_processing import tokenize_and_stem, tokenize
-from src.config import BM25_K1, BM25_B, PROCESSED_DIR
+from medrag.retrieval.base import BaseRetriever
+from medrag.nlp.text import tokenize_and_stem, tokenize
+from medrag.config import BM25_K1, BM25_B, PROCESSED_DIR
 
 logger = logging.getLogger(__name__)
 

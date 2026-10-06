@@ -10,13 +10,13 @@ from collections import defaultdict
 from typing import List, Dict, Any
 import numpy as np
 
-from src.data_processor import load_chunks, load_test_queries
-from src.retrievers.inverted_index import InvertedIndexRetriever
-from src.retrievers.bm25_retriever import BM25Retriever
-from src.retrievers.dense_retriever import DenseRetriever
-from src.retrievers.hybrid_retriever import HybridRetriever
-from src.evaluation.metrics import precision_at_k, recall_at_k, reciprocal_rank, average_precision
-from src.config import DATA_DIR
+from medrag.data.processor import load_chunks, load_test_queries
+from medrag.retrieval.inverted_index import InvertedIndexRetriever
+from medrag.retrieval.bm25 import BM25Retriever
+from medrag.retrieval.dense import DenseRetriever
+from medrag.retrieval.hybrid import HybridRetriever
+from medrag.evaluation.metrics import precision_at_k, recall_at_k, reciprocal_rank, average_precision
+from medrag.config import DATA_DIR
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)

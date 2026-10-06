@@ -16,9 +16,9 @@ from collections import defaultdict, Counter
 from typing import List, Dict, Any, Tuple, Optional
 from pathlib import Path
 
-from src.retrievers.base import BaseRetriever
-from src.text_processing import tokenize_and_stem, tokenize
-from src.config import INDEX_CACHE_PATH
+from medrag.retrieval.base import BaseRetriever
+from medrag.nlp.text import tokenize_and_stem, tokenize
+from medrag.config import INDEX_CACHE_PATH
 
 logger = logging.getLogger(__name__)
 

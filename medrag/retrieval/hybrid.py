@@ -5,8 +5,8 @@ import logging
 from typing import List, Dict, Any, Tuple
 from collections import defaultdict
 
-from src.retrievers.base import BaseRetriever
-from src.config import RRF_K
+from medrag.retrieval.base import BaseRetriever
+from medrag.config import RRF_K
 
 logger = logging.getLogger(__name__)
 
