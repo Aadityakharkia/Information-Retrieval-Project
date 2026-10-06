@@ -45,19 +45,21 @@
         
         <!-- LEFT COLUMN -->
         <div class="bento-col-left reveal">
-          <!-- Top Left: Massive Headline & Search Bar -->
-          <div class="bento-box box-p" style="flex: 1; display: flex; flex-direction: column; justify-content: center; position: relative; z-index: 10;">
-            <h1 class="text-massive">Trustworthy<br>Healthcare</h1>
-            <p class="text-subtitle" style="margin-top: 0.6rem;">Find the right pages. Answer only from evidence.</p>
+          <!-- Top Left: Headline & Large Prominent Search Bar -->
+          <div class="bento-box box-p" style="display: flex; flex-direction: column; justify-content: center; position: relative; z-index: 10;">
+            <h1 class="text-massive">Your Health Questions.<br><span class="purple-gradient-text">Verifiable Answers.</span></h1>
+            <p class="text-subtitle" style="margin-top: 0.5rem; margin-bottom: 1rem;">
+              Ask clinical health questions grounded in verified medical evidence.
+            </p>
             
-            <!-- Live Search Bar with Typeahead Dropdown -->
+            <!-- Live Search Bar Container with Typeahead Dropdown -->
             <div class="bento-search-container">
               <div class="search-pill-container" id="searchContainer">
-                <svg class="search-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <svg class="search-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                   <circle cx="11" cy="11" r="8"/>
                   <line x1="21" y1="21" x2="16.65" y2="16.65"/>
                 </svg>
-                <input type="text" id="searchInput" class="search-input" placeholder="Ask a health question (e.g. fever, diabetes)..." autocomplete="off">
+                <input type="text" id="searchInput" class="search-input" placeholder="Type a health query (e.g. fever, diabetes, dosage)..." autocomplete="off">
                 <button id="btnSearchSubmit" class="btn-search-submit" title="Search">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
                     <line x1="5" y1="12" x2="19" y2="12"/>
@@ -68,20 +70,29 @@
               <!-- Floating Live Auto-Suggest Dropdown -->
               <div id="suggestDropdown" class="suggest-dropdown"></div>
             </div>
+
+            <!-- Quick Test Query Chips -->
+            <div class="quick-chips">
+              <span class="chip-label">Try:</span>
+              <button class="chip-btn" data-question="What are the common remedies for fever and body ache?">Fever & Body Ache</button>
+              <button class="chip-btn" data-question="What is the recommended dosage for Paracetamol in adults?">Paracetamol Dosage</button>
+              <button class="chip-btn" data-question="What are the early warning signs of diabetes?">Diabetes Symptoms</button>
+              <button class="chip-btn" data-question="Pet me dard aur bukhar ke ilaj kya hai?">Hinglish Query</button>
+            </div>
           </div>
           
           <!-- Middle Left: Bento Square Category Cards -->
           <div class="bento-squares">
-            <div class="bento-box square-box clickable-card" data-info-title="Dermatology & Skin Care" data-info-desc="Evidence-backed remedies and treatment plans for skin conditions, rashes, acne, and dermatological hygiene.">
-              <img src="assets/bento_facial.png" alt="Clinical Dermatology">
+            <div class="bento-box square-box clickable-card" data-info-title="Symptoms & Diagnostics" data-info-desc="Evidence-based guidance for fever, stomach ache, migraine, cough, and body pain.">
+              <img src="assets/skin.jpg" alt="Symptoms & Diagnostics">
               <div class="square-overlay">
-                <h5>Dermatology & Skin Care</h5>
+                <h5>Symptoms & Diagnostics</h5>
               </div>
             </div>
-            <div class="bento-box square-box clickable-card" data-info-title="Medications & Dosage" data-info-desc="Pharmacotherapy guidelines, dosage instructions, side effect profiles, and antibiotic usage safety.">
-              <img src="assets/bento_dental.png" alt="Medications">
+            <div class="bento-box square-box clickable-card" data-info-title="Diseases & Conditions" data-info-desc="Clinical answers for diabetes management, blood pressure control, asthma, and cardiology.">
+              <img src="assets/hero.jpg" alt="Diseases & Conditions">
               <div class="square-overlay">
-                <h5>Medications & Dosage</h5>
+                <h5>Diseases & Conditions</h5>
               </div>
             </div>
           </div>
@@ -89,7 +100,7 @@
           <!-- Bottom Left: Wide CTA Card -->
           <div class="bento-box box-p" style="display: flex; justify-content: space-between; align-items: flex-end; position: relative; z-index: 10;">
             <div>
-              <p class="text-subtitle" style="margin-bottom: 0.6rem;">Search & Retrieval Engine</p>
+              <p class="text-subtitle" style="margin-bottom: 0.5rem;">MedQuAD Information Retrieval Engine</p>
               <h2 class="text-huge" style="line-height:1;">Verified<br>Medical<br>Answers</h2>
             </div>
             <a href="/library" class="btn-pill btn-white">Explore Library</a>
@@ -122,53 +133,23 @@
 
     <!-- Primary Health Categories Grid -->
     <section id="services" class="services-section container">
-      <h2 class="text-massive reveal" style="font-size: 3.2rem;">Primary Categories</h2>
+      <h2 class="text-massive reveal" style="font-size: 3rem;">Primary Categories</h2>
       
       <div class="service-list">
-        <div class="s-card reveal clickable-card" style="transition-delay: 0.1s" data-info-title="General Health & Symptoms" data-info-desc="Evidence-based guidance for common medical symptoms, diagnostic indicators, and primary health concerns.">
-          <h3>General Health & Symptoms</h3>
-          <p>Verified clinical information for common symptoms, fever, body aches, and gastritis.</p>
-          <img src="assets/bento_facial.png" alt="General Health">
+        <div class="s-card reveal clickable-card" style="transition-delay: 0.1s" data-info-title="Symptoms & Clinical Diagnosis" data-info-desc="Evidence-based clinical guidance for common symptoms like fever, severe stomach pain, migraine, cough, and body aches.">
+          <h3>Symptoms & Diagnosis</h3>
+          <p>Verified evidence for fever, severe stomach pain, migraine, cough, and body aches.</p>
+          <img src="assets/skin.jpg" alt="Symptoms & Diagnosis">
         </div>
-        <div class="s-card reveal clickable-card" style="transition-delay: 0.2s" data-info-title="Medications & Pharmacotherapy" data-info-desc="Comprehensive drug profiles, Paracetamol and antibiotic dosage recommendations, and safety warnings.">
-          <h3>Medications & Pharmacotherapy</h3>
-          <p>Understand drug dosages, indications, side effects, and administration guidelines.</p>
-          <img src="assets/bento_dental.png" alt="Medications">
+        <div class="s-card reveal clickable-card" style="transition-delay: 0.2s" data-info-title="Chronic Diseases & Conditions" data-info-desc="Clinical answers for diabetes management, blood pressure control, asthma, stroke signs, and cardiology.">
+          <h3>Diseases & Conditions</h3>
+          <p>Understand diabetes management, blood pressure control, asthma, and cardiovascular health.</p>
+          <img src="assets/hero.jpg" alt="Diseases & Conditions">
         </div>
-        <div class="s-card reveal clickable-card" style="transition-delay: 0.3s" data-info-title="Lifestyle & Preventive Care" data-info-desc="Preventive lifestyle advice, insomnia sleep hygiene, blood pressure management, and cardiovascular wellness.">
-          <h3>Lifestyle & Sleep Hygiene</h3>
-          <p>Restore natural circadian rhythms, reduce stress, and improve long-term wellness.</p>
-          <img src="assets/bento_mask.png" alt="Sleep Hygiene">
-        </div>
-      </div>
-    </section>
-
-    <!-- Verified Patient & Q&A Stories Slider -->
-    <section class="reviews-section">
-      <div class="container">
-        <h2 class="text-huge" style="color: white; margin-bottom: 1.5rem;">Verified Patient Q&A</h2>
-      </div>
-      
-      <div class="reviews-track" id="reviewsTrack">
-        <div class="review-item">
-          <div class="stars">★★★★★</div>
-          <p class="review-text">"What are the common remedies for severe fever and body ache?"</p>
-          <div class="review-author">100% Grounded Context • MedQuAD Verified</div>
-        </div>
-        <div class="review-item">
-          <div class="stars">★★★★★</div>
-          <p class="review-text">"What is the recommended dosage for Paracetamol in adults?"</p>
-          <div class="review-author">Verified Sentence Citations • SMART lnc.ltc</div>
-        </div>
-        <div class="review-item">
-          <div class="stars">★★★★★</div>
-          <p class="review-text">"How to manage high blood pressure naturally through diet?"</p>
-          <div class="review-author">RRF Hybrid Rank Fusion • Zero Hallucination</div>
-        </div>
-        <div class="review-item">
-          <div class="stars">★★★★★</div>
-          <p class="review-text">"What are the early warning signs of diabetes and hyperglycemia?"</p>
-          <div class="review-author">Dense MiniLM Embeddings • Porter Stemmed</div>
+        <div class="s-card reveal clickable-card" style="transition-delay: 0.3s" data-info-title="Medications & Pharmacotherapy" data-info-desc="Verified Paracetamol dosage rules, antibiotic profiles, administration guidelines, and safety warnings.">
+          <h3>Medications & Dosages</h3>
+          <p>Explore Paracetamol dosages, antibiotic profiles, side-effect risks, and drug safety.</p>
+          <img src="assets/sleep.jpg" alt="Medications & Dosages">
         </div>
       </div>
     </section>

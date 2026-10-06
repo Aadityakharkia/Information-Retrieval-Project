@@ -38,18 +38,23 @@ body {
 
 /* Typography matching exact reference */
 .text-massive {
-    font-size: clamp(2rem, 4.5vw, 3.8vw);
-    line-height: 1.05;
-    letter-spacing: -0.05em;
+    font-size: clamp(2.2rem, 3.8vw, 3.5vw);
+    line-height: 1.08;
+    letter-spacing: -0.04em;
     font-weight: 800;
 }
+.purple-gradient-text {
+    background: var(--purple-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
 .text-huge {
-    font-size: 2.8rem;
+    font-size: 2.5rem;
     letter-spacing: -0.04em;
     font-weight: 800;
 }
 .text-card-title {
-    font-size: 2rem;
+    font-size: 1.8rem;
     line-height: 1.1;
     letter-spacing: -0.03em;
     font-weight: 700;
@@ -174,6 +179,7 @@ body {
     background: var(--bg-body);
     color: var(--text-pure);
     border: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
 }
 .btn-white:hover { background: var(--text-pure); color: var(--text-light); }
 
@@ -183,21 +189,20 @@ body {
 }
 .bento-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1.1fr 0.9fr;
     gap: 1.5rem;
-    height: 620px;
+    min-height: 650px;
 }
 .bento-col-left {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
-    height: 100%;
 }
 .bento-squares {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1.5rem;
-    height: 38%;
+    height: 200px;
 }
 .bento-box {
     background: #f1f2f4;
@@ -210,6 +215,11 @@ body {
 .square-box {
     height: 100%;
     position: relative;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+.square-box:hover {
+    transform: translateY(-4px);
 }
 .square-box img {
     position: absolute;
@@ -219,15 +229,15 @@ body {
 }
 .square-overlay {
     position: absolute;
-    bottom: 1rem; left: 1rem; right: 1rem;
-    background: rgba(255, 255, 255, 0.9);
+    bottom: 0.8rem; left: 0.8rem; right: 0.8rem;
+    background: rgba(255, 255, 255, 0.92);
     backdrop-filter: blur(8px);
-    border-radius: 12px;
-    padding: 0.75rem 1rem;
+    border-radius: 14px;
+    padding: 0.8rem 1rem;
     z-index: 5;
 }
 .square-overlay h5 {
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     font-weight: 700;
     color: var(--text-pure);
 }
@@ -237,6 +247,7 @@ body {
 }
 .bento-hero-portrait {
     height: 100%;
+    min-height: 600px;
     position: relative;
 }
 
@@ -272,6 +283,7 @@ body {
     min-height: 170px;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     border: 1px solid rgba(255, 255, 255, 0.5);
+    cursor: pointer;
 }
 .glass-card:hover {
     transform: translateY(-5px);
@@ -299,7 +311,7 @@ body {
     justify-content: center;
 }
 
-/* SEARCH BAR INSIDE BENTO BOX */
+/* SEARCH BAR INSIDE BENTO HERO BOX */
 .bento-search-container {
     position: relative;
     width: 100%;
@@ -312,11 +324,12 @@ body {
     display: flex;
     align-items: center;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(0, 0, 0, 0.06);
-    transition: box-shadow 0.25s ease;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    transition: box-shadow 0.25s ease, border-color 0.25s ease;
 }
 .search-pill-container:focus-within {
-    box-shadow: 0 14px 40px rgba(108, 92, 231, 0.22);
+    box-shadow: 0 14px 40px rgba(108, 92, 231, 0.25);
+    border-color: var(--primary-purple);
 }
 .search-icon {
     color: var(--primary-purple);
@@ -349,6 +362,40 @@ body {
 }
 .btn-search-submit:hover {
     transform: scale(1.08);
+}
+
+/* QUICK TEST QUERY CHIPS */
+.quick-chips {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+}
+.chip-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.chip-btn {
+    background: white;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-pure);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+}
+.chip-btn:hover {
+    background: var(--primary-purple);
+    color: white;
+    border-color: var(--primary-purple);
+    transform: translateY(-2px);
 }
 
 /* BENTO AUTO-SUGGEST DROPDOWN */
@@ -391,7 +438,7 @@ body {
 
 /* SERVICES SECTION */
 .services-section {
-    padding: 5rem 0;
+    padding: 4rem 0 6rem 0;
 }
 .service-list {
     display: grid;
@@ -411,7 +458,7 @@ body {
     box-shadow: 0 15px 30px rgba(0,0,0,0.08);
 }
 .s-card h3 {
-    font-size: 1.7rem;
+    font-size: 1.6rem;
     letter-spacing: -0.03em;
     margin-bottom: 0.8rem;
     font-weight: 800;
@@ -428,35 +475,6 @@ body {
     height: 200px;
     object-fit: cover;
 }
-
-/* REVIEWS SLIDER */
-.reviews-section {
-    padding: 4rem 0;
-    background: var(--bg-dark);
-    color: var(--text-light);
-    overflow: hidden;
-}
-.reviews-track {
-    display: flex;
-    gap: 2rem;
-    width: max-content;
-    animation: scrollReviews 30s linear infinite;
-    padding: 2rem 0;
-}
-@keyframes scrollReviews {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(calc(-50% - 1rem)); }
-}
-.review-item {
-    width: 400px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 2.2rem;
-    border-radius: 20px;
-}
-.stars { color: #f5c518; margin-bottom: 1rem; font-size: 1.1rem; }
-.review-text { font-size: 1.05rem; line-height: 1.5; margin-bottom: 1.5rem; }
-.review-author { font-weight: 700; color: var(--text-light); }
 
 /* MENU OVERLAY & INFO MODAL */
 .menu-overlay {

@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setTimeout(() => {
       loader.style.opacity = "0";
       loader.style.visibility = "hidden";
-    }, 1200);
+    }, 1000);
   }
 
   // 2. Scroll Reveal Animations
@@ -69,8 +69,8 @@ document.addEventListener("DOMContentLoaded", () => {
   if (infoModal && closeInfoModalBtn) {
     clickableCards.forEach((card) => {
       card.addEventListener("click", (e) => {
-        // Prevent click if clicking search bar inside card
-        if (e.target.closest("#searchContainer") || e.target.closest("#suggestDropdown")) return;
+        // Prevent click if clicking search bar or chip buttons inside card
+        if (e.target.closest("#searchContainer") || e.target.closest("#suggestDropdown") || e.target.closest(".chip-btn")) return;
 
         const title = card.getAttribute("data-info-title");
         const desc = card.getAttribute("data-info-desc");
@@ -181,4 +181,16 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
   }
+
+  // 7. Quick Chip Buttons
+  document.querySelectorAll(".chip-btn").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const q = btn.dataset.question;
+      if (q) {
+        if (searchInput) searchInput.value = q;
+        triggerSearch(q);
+      }
+    });
+  });
 });
