@@ -10,9 +10,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const loader = document.getElementById("loader");
   if (loader) {
     setTimeout(() => {
-      loader.style.opacity = "0";
-      loader.style.visibility = "hidden";
-    }, 1000);
+      loader.classList.add("hidden");
+      setTimeout(() => {
+        loader.style.display = "none";
+      }, 700);
+    }, 1300);
   }
 
   // 2. Scroll Reveal Animations

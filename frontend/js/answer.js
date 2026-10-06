@@ -37,8 +37,31 @@ document.addEventListener("DOMContentLoaded", async () => {
   tagRetriever.textContent = `Retriever: ${retriever.toUpperCase()}`;
   tagModel.textContent = `Model: ${model}`;
 
-  const minLoadTime = 800;
+  const minLoadTime = 1750;
   const startTime = Date.now();
+
+  const skeletonStatusText = document.getElementById("skeletonStatusText");
+  const skeletonStatusSub = document.getElementById("skeletonStatusSub");
+  const stepNode1 = document.getElementById("stepNode1");
+  const stepNode2 = document.getElementById("stepNode2");
+  const stepNode3 = document.getElementById("stepNode3");
+  const trackFill1 = document.getElementById("trackFill1");
+  const trackFill2 = document.getElementById("trackFill2");
+
+  // Multi-phase progress pipeline step simulation
+  const step2Timer = setTimeout(() => {
+    if (skeletonStatusText) skeletonStatusText.textContent = "Phase 2: Reciprocal Rank Fusion (RRF k=60)...";
+    if (skeletonStatusSub) skeletonStatusSub.textContent = "Merging sparse keyword rankings and dense vector cosine similarities...";
+    if (trackFill1) trackFill1.style.width = "100%";
+    if (stepNode2) stepNode2.classList.add("active");
+  }, 550);
+
+  const step3Timer = setTimeout(() => {
+    if (skeletonStatusText) skeletonStatusText.textContent = "Phase 3: Clinical Evidence Grounding & Verification...";
+    if (skeletonStatusSub) skeletonStatusSub.textContent = "Validating sentence claims against retrieved medical evidence...";
+    if (trackFill2) trackFill2.style.width = "100%";
+    if (stepNode3) stepNode3.classList.add("active");
+  }, 1150);
 
   try {
     const data = await askQuestion({
@@ -57,6 +80,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     renderAnswerData(data);
   } catch (err) {
+    clearTimeout(step2Timer);
+    clearTimeout(step3Timer);
     queryTitle.textContent = "Error Loading Answer";
     sentencesContainer.innerHTML = `<p style="color:#c5221f; font-weight:700;">${err.message}</p>`;
   } finally {
@@ -69,7 +94,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       // Force reflow for smooth opacity/translate transition
       void resultsSection.offsetHeight;
       resultsSection.classList.add("visible");
-    }, 380);
+    }, 400);
   }
 
   function renderAnswerData(data) {
@@ -158,6 +183,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const targetSource = document.getElementById(`source_${cid}`);
         if (targetSource) {
           document.querySelectorAll(".source-card").forEach((sc) => sc.classList.remove("highlighted"));
+          void targetSource.offsetWidth;
           targetSource.classList.add("highlighted");
           targetSource.scrollIntoView({ behavior: "smooth", block: "center" });
         }

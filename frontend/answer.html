@@ -50,13 +50,44 @@
       </div>
     </div>
 
-    <!-- Skeleton Loader -->
+    <!-- Skeleton Loader with Multi-Stage Progress -->
     <div id="skeletonLoader" class="skeleton-loader active">
-      <div class="skeleton-status-bar">
+      <div class="skeleton-status-header">
         <div class="skeleton-pulse-dot"></div>
-        <span class="skeleton-status-text">Synthesizing clinical evidence from indexed corpus...</span>
+        <div class="skeleton-status-info">
+          <span id="skeletonStatusText" class="skeleton-status-text">Phase 1: Scanning Sparse Index & Semantic Embeddings...</span>
+          <p id="skeletonStatusSub" class="skeleton-status-sub">SMART lnc.ltc TF-IDF title & body scoring in progress...</p>
+        </div>
       </div>
-      <div class="skeleton-line" style="width: 35%; height: 22px; margin-bottom: 20px;"></div>
+
+      <!-- Live Clinical Synthesis Pipeline Steps -->
+      <div class="skeleton-pipeline-steps">
+        <div class="pipeline-node active" id="stepNode1">
+          <div class="node-circle"><i class="fa-solid fa-magnifying-glass"></i></div>
+          <div class="node-meta">
+            <span class="node-phase">Step 1</span>
+            <span class="node-label">Retrieval</span>
+          </div>
+        </div>
+        <div class="pipeline-track"><div class="pipeline-track-fill" id="trackFill1"></div></div>
+        <div class="pipeline-node" id="stepNode2">
+          <div class="node-circle"><i class="fa-solid fa-layer-group"></i></div>
+          <div class="node-meta">
+            <span class="node-phase">Step 2</span>
+            <span class="node-label">RRF Fusion</span>
+          </div>
+        </div>
+        <div class="pipeline-track"><div class="pipeline-track-fill" id="trackFill2"></div></div>
+        <div class="pipeline-node" id="stepNode3">
+          <div class="node-circle"><i class="fa-solid fa-circle-check"></i></div>
+          <div class="node-meta">
+            <span class="node-phase">Step 3</span>
+            <span class="node-label">Verification</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="skeleton-line" style="width: 35%; height: 22px; margin-bottom: 22px;"></div>
       <div class="skeleton-line" style="width: 100%;"></div>
       <div class="skeleton-line" style="width: 94%;"></div>
       <div class="skeleton-line" style="width: 86%;"></div>
