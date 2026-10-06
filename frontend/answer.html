@@ -3,114 +3,118 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Verified Answer - HealthNest</title>
+  <title>Verified Answer — HealthNest</title>
+  <meta name="description" content="Evidence-verified medical response with sentence citations and IR diagnostics.">
+  
+  <!-- Google Fonts & Font Awesome -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-  <!-- Ambient Floating Background Blobs -->
-  <div class="cloud-bg">
-    <div class="blob-1"></div>
-    <div class="blob-2"></div>
-  </div>
 
-  <div class="app-wrapper">
-
-    <!-- Top Navigation -->
-    <header>
-      <a href="/" class="logo-group">
-        <div class="logo-asterisk">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-            <path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M4.93 19.07L19.07 4.93"/>
-          </svg>
-        </div>
-        <span class="logo-text">HealthNest</span>
+  <!-- Header -->
+  <header class="header">
+    <div class="container header-inner">
+      <a href="/" class="logo-block">
+        <span class="logo-main">HEALTHNEST</span>
+        <span class="logo-sub">verifiable health rag</span>
       </a>
 
-      <nav>
+      <nav class="header-nav-links">
         <a href="/">Home</a>
         <a href="/library">Library</a>
         <a href="/about">About</a>
       </nav>
 
-      <div class="nav-actions">
-        <a href="/" class="btn-get-started">Ask New Question</a>
-      </div>
-    </header>
+      <a href="/" class="btn-pill btn-outline">Ask New Question</a>
+    </div>
+  </header>
 
-    <!-- Query Header -->
+  <main class="container" style="padding-top: 1.5rem; padding-bottom: 4rem;">
+    <!-- Query Header Card -->
     <div class="answer-hero-header">
-      <div style="font-size: 13px; font-weight: 800; color: var(--primary-purple); text-transform: uppercase; margin-bottom: 8px;">
-        HEALTHNEST EVIDENCE VERIFICATION ENGINE
-      </div>
-      <h1 id="queryTitle" style="font-size: 36px; font-weight: 900; margin-bottom: 16px;">Loading question...</h1>
+      <span class="text-subtitle" style="font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-pure);">
+        Evidence Verification Engine
+      </span>
+      <h1 id="queryTitle" class="text-huge" style="margin-top: 0.5rem; margin-bottom: 1rem; font-size: 2.2rem;">
+        Loading query...
+      </h1>
 
-      <div style="display: flex; gap: 12px; flex-wrap: wrap;" id="queryTags">
-        <span class="support-pill" style="background:#e0e7ff; color:#3730a3;" id="tagRetriever">Hybrid RRF</span>
-        <span class="support-pill" style="background:#fef3c7; color:#92400e;" id="tagModel">Llama 3.2</span>
-        <span class="support-pill" style="background:#d1fae5; color:#065f46;" id="tagStatus">Processing...</span>
+      <div class="query-meta-tags" id="queryTags">
+        <span class="meta-pill" id="tagRetriever">Retriever: HYBRID RRF</span>
+        <span class="meta-pill" id="tagModel">Model: LLAMA 3.2</span>
+        <span class="meta-pill" id="tagStatus">Status: PROCESSING...</span>
       </div>
     </div>
 
     <!-- Skeleton Loader -->
     <div id="skeletonLoader" class="skeleton-loader active">
-      <div class="skeleton-line" style="width: 40%;"></div>
-      <div class="skeleton-line" style="width: 90%;"></div>
-      <div class="skeleton-line" style="width: 75%;"></div>
-      <div class="skeleton-line" style="width: 60%;"></div>
+      <div class="skeleton-line" style="width: 35%;"></div>
+      <div class="skeleton-line" style="width: 95%;"></div>
+      <div class="skeleton-line" style="width: 80%;"></div>
+      <div class="skeleton-line" style="width: 65%;"></div>
     </div>
 
     <!-- Results Display Section -->
-    <section id="resultsSection" style="display: none; padding-bottom: 80px;">
-
+    <section id="resultsSection" style="display: none;">
       <!-- Emergency Banner -->
       <div id="emergencyBanner" class="emergency-banner" style="display: none;"></div>
 
       <!-- Verified Answer Card -->
-      <div class="answer-hero-header" id="answerCard" style="margin-bottom: 36px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 14px; border-bottom: 1px solid #f1f5f9;">
-          <h2 style="font-size: 24px; font-weight: 800;">Verifiable Response</h2>
+      <div class="answer-hero-header" id="answerCard" style="background: #ffffff;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-light);">
+          <h2 style="font-size: 1.4rem; font-weight: 800; color: var(--text-pure);">Verifiable Clinical Response</h2>
           <span id="answerStatusBadge" class="answer-badge badge-supported">Verified</span>
         </div>
 
+        <!-- Sentence Container -->
         <div id="sentencesContainer"></div>
 
-        <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #f1f5f9; font-size: 13px; color: var(--text-muted); font-style: italic;">
-          ⚠️ Information from a Q&A dataset, not medical advice.
+        <div style="margin-top: 1.8rem; padding-top: 1rem; border-top: 1px solid var(--border-light); font-size: 0.85rem; color: var(--text-muted);">
+          ⚠️ Grounded directly in indexed MedQuAD evidence pages. Always consult a licensed medical professional for personal clinical care.
         </div>
       </div>
 
-      <!-- Context Sources List -->
-      <div style="margin-top: 40px;">
-        <h2 style="font-size: 28px; font-weight: 900; margin-bottom: 24px;">Reference Context Pages (Sources)</h2>
+      <!-- Reference Context Pages (Sources) -->
+      <div style="margin-top: 3rem;">
+        <h2 class="text-massive" style="font-size: 2rem; margin-bottom: 1.5rem;">Reference Context Pages</h2>
         <div id="sourcesContainer"></div>
       </div>
 
-      <!-- IR Inspector -->
-      <div class="answer-hero-header" style="margin-top: 40px; background: #f8fafc;">
-        <h3 style="font-size: 20px; font-weight: 800; margin-bottom: 16px;">🔍 How Was This Found? (IR Inspector)</h3>
-        <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px;">
-          Side-by-side comparison of sparse keyword ranking vs dense semantic embedding ranking vs reciprocal rank fusion (RRF).
+      <!-- Deep IR Inspector 3-Col Grid -->
+      <div class="answer-hero-header" style="margin-top: 3rem;">
+        <h3 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 0.5rem; color: var(--text-pure);">
+          Information Retrieval Inspector
+        </h3>
+        <p class="text-subtitle">
+          Side-by-side comparison of sparse keyword ranking (lnc.ltc), dense semantic embeddings (MiniLM), and Reciprocal Rank Fusion (RRF k=60).
         </p>
 
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
-          <div style="background: white; padding: 18px; border-radius: 16px; border: 1px solid #e2e8f0;">
-            <strong style="color: var(--primary-purple);">Sparse Top-5 (TF-IDF lnc.ltc)</strong>
-            <ul id="inspectorSparseList" style="margin-top: 12px; font-size: 13px; line-height: 1.8; padding-left: 18px;"></ul>
+        <div class="inspector-grid">
+          <div class="inspector-card">
+            <h4>Sparse Top-5 (TF-IDF lnc.ltc)</h4>
+            <ul id="inspectorSparseList"></ul>
           </div>
-          <div style="background: white; padding: 18px; border-radius: 16px; border: 1px solid #e2e8f0;">
-            <strong style="color: var(--primary-purple);">Dense Top-5 (MiniLM)</strong>
-            <ul id="inspectorDenseList" style="margin-top: 12px; font-size: 13px; line-height: 1.8; padding-left: 18px;"></ul>
+          <div class="inspector-card">
+            <h4>Dense Top-5 (MiniLM Embeddings)</h4>
+            <ul id="inspectorDenseList"></ul>
           </div>
-          <div style="background: white; padding: 18px; border-radius: 16px; border: 1px solid #e2e8f0;">
-            <strong style="color: var(--primary-purple);">Fused Top-5 (RRF k=60)</strong>
-            <ul id="inspectorFusedList" style="margin-top: 12px; font-size: 13px; line-height: 1.8; padding-left: 18px;"></ul>
+          <div class="inspector-card">
+            <h4>Fused Top-5 (Hybrid RRF k=60)</h4>
+            <ul id="inspectorFusedList"></ul>
           </div>
         </div>
       </div>
-
     </section>
+  </main>
 
-  </div>
+  <!-- Footer -->
+  <footer class="app-footer">
+    <p>HealthNest • Verifiable Medical RAG Engine • NIH MedQuAD Dataset • Built with Porter Stemmer, SMART lnc.ltc, BM25, Dense & RRF</p>
+  </footer>
 
   <script type="module" src="js/answer.js"></script>
 </body>

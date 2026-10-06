@@ -3,64 +3,140 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>About & IR Report Card - HealthNest</title>
+  <title>About & Architecture — HealthNest</title>
+  <meta name="description" content="Information Retrieval architecture, 9-step pipeline, and system report card benchmarks.">
+  
+  <!-- Google Fonts & Font Awesome -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-  <div class="cloud-bg"></div>
-  <div class="app-wrapper">
-    <header>
-      <a href="/" class="logo-group">
-        <div class="logo-asterisk">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-            <path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M4.93 19.07L19.07 4.93"/>
-          </svg>
-        </div>
-        <span class="logo-text">HealthNest</span>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="container header-inner">
+      <a href="/" class="logo-block">
+        <span class="logo-main">HEALTHNEST</span>
+        <span class="logo-sub">verifiable health rag</span>
       </a>
-      <nav>
+
+      <nav class="header-nav-links">
         <a href="/">Home</a>
         <a href="/library">Library</a>
         <a href="/about" class="active">About</a>
       </nav>
-      <div class="nav-actions">
-        <a href="/" class="btn-get-started" style="text-decoration:none;">Ask Question</a>
-      </div>
-    </header>
 
-    <section style="padding: 40px 0;">
-      <h1 style="font-size: 36px; margin-bottom: 16px;">Information Retrieval System Architecture</h1>
-      <p style="font-size: 18px; color: var(--text-muted); margin-bottom: 40px;">
-        HealthNest implements core IR principles from lectures to ensure verifiable, trustworthy medical Q&A.
+      <a href="/" class="btn-pill btn-outline">Ask Question</a>
+    </div>
+  </header>
+
+  <main class="container" style="padding-top: 1.5rem; padding-bottom: 5rem;">
+    <!-- Hero Title -->
+    <div style="margin-bottom: 2.5rem;">
+      <h1 class="text-massive" style="font-size: 2.5rem; margin-bottom: 0.5rem;">IR System Architecture</h1>
+      <p class="text-subtitle">
+        Strict hand-written Information Retrieval core algorithms powering evidence-grounded healthcare Q&A.
+      </p>
+    </div>
+
+    <!-- 9-Step Pipeline Card -->
+    <div class="answer-hero-header">
+      <h2 style="font-size: 1.6rem; font-weight: 800; color: var(--text-pure); margin-bottom: 0.5rem;">
+        The 9-Step HealthNest Pipeline
+      </h2>
+      <p class="text-subtitle" style="margin-bottom: 1.5rem;">
+        End-to-end flow from raw Kaggle Q&A corpus to sentence-level verified answers.
       </p>
 
-      <!-- 9-Step Pipeline Explanation -->
-      <div class="answer-card">
-        <h2>The 9-Step HealthNest Pipeline</h2>
-        <ol style="margin-left: 20px; margin-top: 16px; line-height: 2;">
-          <li><strong>CSV Dataset Loading:</strong> Flexible schema reader mapping Kaggle Q&A CSV rows.</li>
-          <li><strong>Document Chunking:</strong> Sentence windowing & token granularity control.</li>
-          <li><strong>Text Normalization & Hinglish Lexicon:</strong> Devanagari regex + synonym expansion.</li>
-          <li><strong>Hand-written Inverted Index:</strong> Question & Body multi-zone postings lists.</li>
-          <li><strong>SMART lnc.ltc TF-IDF Vector Space Model:</strong> Log-tf, IDF, cosine normalization.</li>
-          <li><strong>Dense Embeddings:</strong> SentenceTransformers cosine similarity via matrix operations.</li>
-          <li><strong>Reciprocal Rank Fusion (RRF):</strong> Hybrid rank aggregation ($k=60$).</li>
-          <li><strong>Selective Abstention:</strong> Evidence strength thresholding ("I don't know").</li>
-          <li><strong>Fact Verification Checker:</strong> Sentence-level sparse cosine & dosage number verification.</li>
-        </ol>
-      </div>
+      <ul class="architecture-pipeline-list">
+        <li class="pipeline-step-item">
+          <div class="pipeline-step-number">1</div>
+          <div class="pipeline-step-content">
+            <strong>CSV Dataset Ingestion & Validation</strong>
+            <p>Flexible schema reader loading ~16,000 Q&A pairs from Kaggle MedQuAD without external dependencies.</p>
+          </div>
+        </li>
+        <li class="pipeline-step-item">
+          <div class="pipeline-step-number">2</div>
+          <div class="pipeline-step-content">
+            <strong>Document Chunking & Token Granularity</strong>
+            <p>Sentence-level chunk windowing with metadata tracking to establish discrete retrieval units.</p>
+          </div>
+        </li>
+        <li class="pipeline-step-item">
+          <div class="pipeline-step-number">3</div>
+          <div class="pipeline-step-content">
+            <strong>Text Normalization & Hinglish Expansion</strong>
+            <p>Devanagari regex matching, lowercase normalization, Porter stemmer, and 60+ Hinglish symptom phrase expansions.</p>
+          </div>
+        </li>
+        <li class="pipeline-step-item">
+          <div class="pipeline-step-number">4</div>
+          <div class="pipeline-step-content">
+            <strong>Hand-Written Multi-Zone Inverted Index</strong>
+            <p>Weighted zone indexing (Title weight 2.5, Body weight 1.0) with postings lists mapping doc IDs and term frequencies.</p>
+          </div>
+        </li>
+        <li class="pipeline-step-item">
+          <div class="pipeline-step-number">5</div>
+          <div class="pipeline-step-content">
+            <strong>SMART lnc.ltc TF-IDF Vector Space Model</strong>
+            <p>Logarithmic term weighting, inverse document frequency ln(N/df), and cosine document length normalization.</p>
+          </div>
+        </li>
+        <li class="pipeline-step-item">
+          <div class="pipeline-step-number">6</div>
+          <div class="pipeline-step-content">
+            <strong>Dense Embedding Semantic Retrieval</strong>
+            <p>Paraphrase-multilingual MiniLM embeddings with pure NumPy cosine dot-product similarity ranking.</p>
+          </div>
+        </li>
+        <li class="pipeline-step-item">
+          <div class="pipeline-step-number">7</div>
+          <div class="pipeline-step-content">
+            <strong>Reciprocal Rank Fusion (Hybrid RRF)</strong>
+            <p>Unsupervised hybrid fusion formula combining sparse keyword rank and dense semantic rank with constant k=60.</p>
+          </div>
+        </li>
+        <li class="pipeline-step-item">
+          <div class="pipeline-step-number">8</div>
+          <div class="pipeline-step-content">
+            <strong>Selective Abstention Protocol</strong>
+            <p>Evidence confidence thresholding with fallback: explicitly answering "I don't know based on the provided pages" when evidence is weak.</p>
+          </div>
+        </li>
+        <li class="pipeline-step-item">
+          <div class="pipeline-step-number">9</div>
+          <div class="pipeline-step-content">
+            <strong>Sentence-Level Fact Verification Checker</strong>
+            <p>Independent verification verifying each generated sentence against context citations using sparse cosine similarity.</p>
+          </div>
+        </li>
+      </ul>
+    </div>
 
-      <!-- Evaluation Report Card -->
-      <div class="answer-card" style="margin-top: 32px;">
-        <h2>System Report Card (Evaluation Results)</h2>
-        <p style="color: var(--text-muted); margin-bottom: 20px;">Evaluated on dev & test sets across retrieval models, LLM sizes, and Hinglish queries.</p>
-        
-        <div id="evalContainer">
-          <p>Loading evaluation metrics summary...</p>
-        </div>
+    <!-- System Report Card -->
+    <div class="answer-hero-header" style="margin-top: 2rem;">
+      <h2 style="font-size: 1.6rem; font-weight: 800; color: var(--text-pure); margin-bottom: 0.5rem;">
+        System Report Card (Evaluation Benchmarks)
+      </h2>
+      <p class="text-subtitle" style="margin-bottom: 1.5rem;">
+        Empirical evaluation comparing Sparse (TF-IDF), BM25, Dense, and Hybrid (RRF) across Precision, Recall, and MRR.
+      </p>
+
+      <div id="evalContainer">
+        <p style="color: #666;">Loading benchmark evaluation metrics...</p>
       </div>
-    </section>
-  </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    <p>HealthNest • Verifiable Medical RAG Engine • NIH MedQuAD Dataset • Built with Porter Stemmer, SMART lnc.ltc, BM25, Dense & RRF</p>
+  </footer>
 
   <script type="module" src="js/about.js"></script>
 </body>

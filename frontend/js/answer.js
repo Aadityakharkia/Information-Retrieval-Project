@@ -144,8 +144,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         srcDiv.innerHTML = `
           <div style="margin-bottom:10px;">
-            <span style="font-weight:900; color:var(--primary-purple); font-size:18px; margin-right:8px;">[${src.n}]</span>
-            <strong style="font-size:18px;">${src.question}</strong>
+            <span style="font-weight:900; color:#111111; font-size:18px; margin-right:8px;">[${src.n}]</span>
+            <strong style="font-size:18px; color:#111111;">${src.question}</strong>
           </div>
           <p style="font-size:15px; color:#475569; line-height:1.7;">${src.text}</p>
           <div style="margin-top:14px; font-size:13px; color:#64748b; display:flex; gap:20px;">
