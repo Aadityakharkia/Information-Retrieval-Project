@@ -1,0 +1,22 @@
+# Python environment and bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+env/
+
+# Data caches & generated files
+data/raw/
+data/processed/
+*.npy
+*.pkl
+eval/results/*.png
+eval/results/*.json
+
+# IDE / OS files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

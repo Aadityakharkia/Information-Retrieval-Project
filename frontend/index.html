@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HealthNest - Verifiable Health Q&A System</title>
+  <meta name="description" content="Trustworthy healthcare Q&A system powered by IR principles, dense retrieval, and sentence verification.">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <div class="cloud-bg"></div>
+
+  <div class="app-wrapper">
+
+    <!-- Top Navigation -->
+    <header>
+      <a href="/" class="logo-group">
+        <div class="logo-asterisk">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+            <path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M4.93 19.07L19.07 4.93"/>
+          </svg>
+        </div>
+        <span class="logo-text">HealthNest</span>
+      </a>
+
+      <nav>
+        <a href="/" class="active">Home</a>
+        <a href="/library">Library</a>
+        <a href="/about">About</a>
+      </nav>
+
+      <div class="nav-actions">
+        <button id="btnGetStarted" class="btn-get-started">Get Started</button>
+        <button id="btnSettings" class="btn-avatar-settings" title="Settings & Parameters">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2d3436" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Settings Popover Modal -->
+      <div id="settingsPopover" class="settings-popover">
+        <h3>IR & RAG Settings</h3>
+        <div class="form-group">
+          <label for="settingRetriever">Retriever Algorithm</label>
+          <select id="settingRetriever">
+            <option value="hybrid" selected>Hybrid (RRF Fusion)</option>
+            <option value="sparse">Sparse (TF-IDF lnc.ltc)</option>
+            <option value="dense">Dense (MiniLM Embeddings)</option>
+            <option value="bm25">Okapi BM25</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="settingTopK">Top-K Documents</label>
+          <input type="number" id="settingTopK" value="5" min="1" max="10">
+        </div>
+        <div class="form-group">
+          <label for="settingModel">LLM Model</label>
+          <select id="settingModel">
+            <option value="llama3.2:1b" selected>Llama 3.2 (1B)</option>
+            <option value="llama3.2:3b">Llama 3.2 (3B)</option>
+            <option value="llama3.1:8b">Llama 3.1 (8B)</option>
+          </select>
+        </div>
+        <div class="checkbox-group">
+          <input type="checkbox" id="settingAbstain" checked>
+          <label for="settingAbstain">Enable Abstention ("I don't know")</label>
+        </div>
+        <div class="checkbox-group">
+          <input type="checkbox" id="settingChecker" checked>
+          <label for="settingChecker">Enable Sentence Verification</label>
+        </div>
+        <div class="checkbox-group">
+          <input type="checkbox" id="settingChampion">
+          <label for="settingChampion">Use Champion Lists (Top-r)</label>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Hero Section -->
+    <main class="hero-container">
+      <div class="hero-content">
+        <h1>
+          Your Health<br>
+          Questions.<br>
+          <span class="gradient-text">Real Answers.</span>
+        </h1>
+
+        <!-- Search Bar Pill -->
+        <div class="search-pill-container" id="searchContainer">
+          <svg class="search-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input type="text" id="searchInput" class="search-input" placeholder="Ask a health question..." autocomplete="off">
+          <button id="btnSearchSubmit" class="btn-search-submit">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+              <line x1="5" y1="12" x2="19" y2="12"/>
+              <polyline points="12 5 19 12 12 19"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Three Category Cards -->
+        <div class="category-cards-grid">
+          <div class="cat-card" data-category="general">
+            <div class="cat-icon-wrapper">
+              <!-- Stethoscope SVG Icon -->
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6c5ce7" stroke-width="2">
+                <path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1"/>
+                <path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/>
+                <circle cx="20" cy="10" r="2"/>
+              </svg>
+            </div>
+            <h4>General Health</h4>
+          </div>
+
+          <div class="cat-card" data-category="medications">
+            <div class="cat-icon-wrapper">
+              <!-- Pill SVG Icon -->
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6c5ce7" stroke-width="2">
+                <path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/>
+                <path d="m8.5 8.5 7 7"/>
+              </svg>
+            </div>
+            <h4>Medications</h4>
+          </div>
+
+          <div class="cat-card" data-category="lifestyle">
+            <div class="cat-icon-wrapper">
+              <!-- Heart SVG Icon -->
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ff7675" stroke-width="2">
+                <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+              </svg>
+            </div>
+            <h4>Lifestyle</h4>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hero Image Wrapper -->
+      <div class="hero-image-wrapper">
+        <img src="assets/hero.jpg" alt="Health & Wellness" class="hero-img" id="heroImg" onerror="this.src='https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=800&q=80'">
+      </div>
+    </main>
+
+    <!-- Skeleton Loading Animation -->
+    <div id="skeletonLoader" class="skeleton-loader">
+      <div class="skeleton-line" style="width: 40%;"></div>
+      <div class="skeleton-line" style="width: 85%;"></div>
+      <div class="skeleton-line" style="width: 75%;"></div>
+      <div class="skeleton-line" style="width: 60%;"></div>
+    </div>
+
+    <!-- Results Display Section -->
+    <section id="resultsSection" class="results-section">
+      
+      <!-- Emergency Banner -->
+      <div id="emergencyBanner" class="emergency-banner" style="display: none;"></div>
+
+      <!-- Answer Card -->
+      <div class="answer-card" id="answerCard">
+        <div class="answer-card-header">
+          <h2>Verified Answer</h2>
+          <span id="answerStatusBadge" class="answer-badge badge-supported">Verified</span>
+        </div>
+
+        <div id="sentencesContainer"></div>
+
+        <div class="disclaimer-footer">
+          ⚠️ Information from a Q&A dataset, not medical advice.
+        </div>
+      </div>
+
+      <!-- Sources Section -->
+      <div class="sources-container">
+        <h3>Reference Context Pages (Sources)</h3>
+        <div id="sourcesContainer"></div>
+      </div>
+
+      <!-- Collapsible Inspector -->
+      <div class="inspector-card">
+        <h3>🔍 How Was This Found? (IR Inspector)</h3>
+        <div class="inspector-grid" id="inspectorGrid">
+          <div class="inspector-col">
+            <strong>Sparse Top-5 (TF-IDF)</strong>
+            <ul id="inspectorSparseList"></ul>
+          </div>
+          <div class="inspector-col">
+            <strong>Dense Top-5 (MiniLM)</strong>
+            <ul id="inspectorDenseList"></ul>
+          </div>
+          <div class="inspector-col">
+            <strong>Fused Top-5 (RRF)</strong>
+            <ul id="inspectorFusedList"></ul>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <script type="module" src="js/home.js"></script>
+</body>
+</html>
