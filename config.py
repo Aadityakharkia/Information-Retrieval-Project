@@ -80,7 +80,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 
 # Abstention Thresholds (Tuned on dev set)
 ABSTAIN_SCORE_THRESHOLD = 0.12
-ABSTAIN_QUERY_COVERAGE_THRESHOLD = 0.25
+ABSTAIN_QUERY_COVERAGE_THRESHOLD = 0.40
 
 # Answer Verification Checker Thresholds
 CHECKER_SPARSE_COSINE_MIN = 0.20

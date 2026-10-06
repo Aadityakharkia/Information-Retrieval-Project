@@ -61,9 +61,10 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      data.chunks.forEach((chunk) => {
+      data.chunks.forEach((chunk, idx) => {
         const card = document.createElement("div");
-        card.className = "library-card";
+        card.className = "library-card stagger-item";
+        card.style.animationDelay = `${(idx * 0.04).toFixed(2)}s`;
         card.innerHTML = `
           <div>
             <div class="library-card-id">Chunk #${chunk.chunk_id} • Doc #${chunk.qa_id}</div>

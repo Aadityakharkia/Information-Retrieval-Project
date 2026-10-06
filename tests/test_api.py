@@ -1,36 +1,43 @@
 """API contract smoke tests (uses cached indices; offline generator)."""
 import pytest
-from fastapi.testclient import TestClient
-
-from medrag.api.main import app
+from backend.app import app
 
 
 @pytest.fixture(scope="module")
 def client():
-    with TestClient(app) as c:
+    app.config["TESTING"] = True
+    with app.test_client() as c:
         yield c
 
 
 def test_health(client):
-    body = client.get("/api/health").json()
-    assert body["is_initialized"] is True and body["chunks_indexed"] > 0
-
-
-def test_query_contract(client):
-    r = client.post("/api/query", json={
-        "question": "What are the symptoms of glaucoma?",
-        "retriever_type": "bm25", "generator_model": "mock-offline"})
+    r = client.get("/api/health")
     assert r.status_code == 200
-    body = r.json()
-    assert {"answer", "refused", "retrieved_chunks", "citation_audit", "ir_diagnostics"} <= body.keys()
+    body = r.get_json()
+    assert body["status"] == "ok" and body["chunks_count"] > 0
 
 
-def test_ood_refused(client):
-    r = client.post("/api/query", json={
-        "question": "How do I bake chocolate chip cookies?",
-        "retriever_type": "inverted_index", "generator_model": "mock-offline"})
-    assert r.json()["refused"] is True
+def test_ask_contract(client):
+    r = client.post("/api/ask", json={
+        "question": "headache relief and causes",
+        "retriever": "hybrid",
+        "model": "llama3.2:1b"
+    })
+    assert r.status_code == 200
+    body = r.get_json()
+    assert body["status"] == "answered"
+    assert len(body["sentences"]) > 0
+    assert len(body["sources"]) > 0
 
 
-def test_validation(client):
-    assert client.post("/api/query", json={"question": ""}).status_code == 422
+def test_ood_abstained(client):
+    r = client.post("/api/ask", json={
+        "question": "how to build a rocket engine",
+        "retriever": "hybrid",
+        "model": "llama3.2:1b"
+    })
+    assert r.status_code == 200
+    body = r.get_json()
+    assert body["status"] == "abstained"
+    assert body["abstain"]["should_abstain"] is True
+

@@ -26,12 +26,25 @@
     scroll-behavior: smooth;
 }
 
+/* GLOBAL ULTRA-SMOOTH PAGE ENTRY */
+@keyframes pageEnterSmooth {
+    0% {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 body {
     background-color: var(--bg-body);
     color: var(--text-pure);
     font-family: var(--font-main);
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
+    animation: pageEnterSmooth 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 /* Typography matching exact reference */
@@ -641,24 +654,97 @@ body {
     display: none;
     background: var(--bg-card);
     border-radius: var(--radius-bento);
-    padding: 2.5rem;
+    padding: 2.8rem;
     border: 1px solid var(--border-light);
     margin-bottom: 2rem;
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .skeleton-loader.active {
     display: block;
+    opacity: 1;
+    transform: translateY(0);
 }
+.skeleton-loader.fade-out {
+    opacity: 0 !important;
+    transform: translateY(-8px) scale(0.99) !important;
+    transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.skeleton-status-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 1.8rem;
+}
+.skeleton-pulse-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--text-pure);
+    animation: pulseDot 1.4s infinite ease-in-out;
+}
+@keyframes pulseDot {
+    0%, 100% {
+        transform: scale(0.8);
+        opacity: 0.35;
+    }
+    50% {
+        transform: scale(1.25);
+        opacity: 1;
+    }
+}
+.skeleton-status-text {
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-pure);
+    animation: pulseText 1.8s infinite ease-in-out;
+}
+@keyframes pulseText {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
+
 .skeleton-line {
     height: 18px;
-    background: linear-gradient(90deg, #e2e8f0 25%, #edf2f7 50%, #e2e8f0 75%);
+    background: linear-gradient(90deg, #ebebef 25%, #dedee3 50%, #ebebef 75%);
     background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
+    animation: shimmer 1.6s infinite ease-in-out;
     border-radius: 8px;
     margin-bottom: 14px;
 }
 @keyframes shimmer {
     0% { background-position: 200% 0; }
     100% { background-position: -200% 0; }
+}
+
+/* Results Display Section */
+#resultsSection {
+    opacity: 0;
+    transform: translateY(18px);
+    transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+#resultsSection.visible {
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+}
+
+/* Dynamic Stagger Reveal */
+@keyframes smoothCascade {
+    0% {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+.stagger-item {
+    animation: smoothCascade 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 /* Emergency Banner */
@@ -685,6 +771,7 @@ body {
     align-items: baseline;
     flex-wrap: wrap;
     gap: 8px;
+    transition: transform 0.2s ease, background-color 0.2s ease;
 }
 .sentence-item:last-child {
     border-bottom: none;
@@ -702,11 +789,11 @@ body {
     border-radius: 6px;
     text-decoration: none;
     margin-left: 4px;
-    transition: transform 0.15s ease, background-color 0.15s ease;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease;
     cursor: pointer;
 }
 .citation-tag:hover {
-    transform: scale(1.1);
+    transform: scale(1.12);
     background: #333333;
 }
 
@@ -719,6 +806,7 @@ body {
     letter-spacing: 0.04em;
     display: inline-flex;
     align-items: center;
+    transition: all 0.25s ease;
 }
 .badge-supported {
     background: #e6f4ea;
@@ -738,11 +826,11 @@ body {
     padding: 1.8rem 2.2rem;
     border: 1px solid var(--border-light);
     margin-bottom: 1.2rem;
-    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease, box-shadow 0.3s ease;
 }
 .source-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.05);
 }
 .source-card.highlighted {
     border-color: #111111;

@@ -94,20 +94,21 @@ class InvertedIndexRetriever(BaseRetriever):
             
         self.is_built = True
         
-        # Save cache
-        try:
-            INDEX_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
-            with open(INDEX_CACHE_PATH, "wb") as f:
-                pickle.dump({
-                    "N": self.N,
-                    "postings": self.postings,
-                    "df": self.df,
-                    "idf": self.idf,
-                    "doc_norms": self.doc_norms
-                }, f)
-            logger.info("Inverted index cached successfully.")
-        except Exception as e:
-            logger.warning(f"Failed to cache inverted index: {e}")
+        # Save cache (only for full corpus, not toy test chunks)
+        if self.N >= 10:
+            try:
+                INDEX_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+                with open(INDEX_CACHE_PATH, "wb") as f:
+                    pickle.dump({
+                        "N": self.N,
+                        "postings": self.postings,
+                        "df": self.df,
+                        "idf": self.idf,
+                        "doc_norms": self.doc_norms
+                    }, f)
+                logger.info("Inverted index cached successfully.")
+            except Exception as e:
+                logger.warning(f"Failed to cache inverted index: {e}")
 
     def get_postings(self, term: str) -> Optional[List[Tuple[int, int]]]:
         """Return postings list for a given term."""

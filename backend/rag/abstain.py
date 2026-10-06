@@ -68,7 +68,20 @@ def evaluate_abstention(
             "metrics": metrics
         }
 
-    # Condition 2: Query term coverage in retrieved documents is too low
+    # Condition 2: Top retrieved document has zero matching query terms
+    q_tokens = set(tokenize(query, use_stopwords=True, use_stemmer=True))
+    if q_tokens and retrieval_results:
+        top_data = retrieval_results[0].get("chunk", retrieval_results[0])
+        top_text = f"{top_data.get('text', '')} {top_data.get('question', '')}"
+        top_tokens = set(tokenize(top_text, use_stopwords=True, use_stemmer=True))
+        if len(q_tokens.intersection(top_tokens)) == 0:
+            return {
+                "should_abstain": True,
+                "reason": "Top retrieved reference contains none of the queried medical terms.",
+                "metrics": metrics
+            }
+
+    # Condition 3: Query term coverage in retrieved documents is too low
     if coverage < coverage_threshold:
         return {
             "should_abstain": True,

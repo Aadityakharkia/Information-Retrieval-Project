@@ -72,9 +72,14 @@ def generate_llm_response(
     return generate_mock_rag_answer(messages)
 
 
+import re
+from backend.ir.text import tokenize
+
+
 def generate_mock_rag_answer(messages: List[Dict[str, str]]) -> str:
     """
     Extracts facts from context in user message and constructs cited sentences [1]..[n].
+    Ensures strict relevance to the user question; abstains if context is irrelevant.
     Used when Ollama local daemon is not running.
     """
     user_msg = ""
@@ -86,6 +91,13 @@ def generate_mock_rag_answer(messages: List[Dict[str, str]]) -> str:
     if "Context Pages:" not in user_msg:
         return "I don't know based on the provided pages."
 
+    # Extract user question
+    q_match = re.search(r"User Health Question:\s*(.+?)(?:\n\nInstructions:|$)", user_msg, re.DOTALL)
+    if not q_match:
+        q_match = re.search(r"Question:\s*(.+?)(?:\nAnswer:|$)", user_msg, re.DOTALL)
+    question_text = q_match.group(1).strip() if q_match else ""
+    q_tokens = set(tokenize(question_text, use_stopwords=True, use_stemmer=True)) if question_text else set()
+
     # Parse context blocks [n]
     lines = user_msg.split("\n")
     ctx_blocks = []
@@ -94,6 +106,12 @@ def generate_mock_rag_answer(messages: List[Dict[str, str]]) -> str:
 
     for line in lines:
         line_s = line.strip()
+        if line_s.startswith("User Health Question:") or line_s.startswith("Instructions:"):
+            if curr_n is not None and curr_text:
+                ctx_blocks.append((curr_n, " ".join(curr_text)))
+                curr_n = None
+                curr_text = []
+            break
         if line_s.startswith("[") and "Reference Page" in line_s:
             if curr_n is not None and curr_text:
                 ctx_blocks.append((curr_n, " ".join(curr_text)))
@@ -112,14 +130,44 @@ def generate_mock_rag_answer(messages: List[Dict[str, str]]) -> str:
     if not ctx_blocks:
         return "I don't know based on the provided pages."
 
+    # Score and filter blocks by query relevance
+    relevant_blocks = []
+    for n, text in ctx_blocks:
+        block_tokens = set(tokenize(text, use_stopwords=True, use_stemmer=True))
+        overlap = q_tokens.intersection(block_tokens) if q_tokens else set()
+        # Require actual query term overlap if query tokens are available
+        if not q_tokens or len(overlap) > 0:
+            relevant_blocks.append((n, text, len(overlap)))
+
+    # If no retrieved context chunks have relevant query terms, abstain truthfully
+    if not relevant_blocks:
+        return "I don't know based on the provided pages."
+
+    # Sort blocks by relevance overlap
+    relevant_blocks.sort(key=lambda x: x[2], reverse=True)
+
     cited_sentences = []
-    for n, text in ctx_blocks[:3]:
+    for n, text, _ in relevant_blocks[:3]:
         raw_sents = [s.strip() for s in text.split(".") if len(s.strip()) > 15]
-        for s in raw_sents[:2]:
+        # Prioritize sentences that contain query terms
+        scored_sents = []
+        for s in raw_sents:
+            s_tokens = set(tokenize(s, use_stopwords=True, use_stemmer=True))
+            s_overlap = len(q_tokens.intersection(s_tokens)) if q_tokens else 1
+            scored_sents.append((s, s_overlap))
+        
+        for s, score in scored_sents:
             s_clean = s.rstrip(".")
-            cited_sentences.append(f"{s_clean} [{n}].")
+            # Prevent duplicate or near-identical sentences across chunks
+            if not any(s_clean.lower() in existing.lower() or existing.lower() in s_clean.lower() for existing in cited_sentences):
+                cited_sentences.append(f"{s_clean} [{n}].")
+                if len(cited_sentences) >= 4:
+                    break
+        if len(cited_sentences) >= 4:
+            break
 
     if not cited_sentences:
         return "I don't know based on the provided pages."
 
     return " ".join(cited_sentences[:4])
+

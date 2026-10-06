@@ -50,10 +50,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     renderAnswerData(data);
   } catch (err) {
     queryTitle.textContent = "Error Loading Answer";
-    sentencesContainer.innerHTML = `<p style="color:red; font-weight:bold;">${err.message}</p>`;
+    sentencesContainer.innerHTML = `<p style="color:#c5221f; font-weight:700;">${err.message}</p>`;
   } finally {
-    skeletonLoader.classList.remove("active");
-    resultsSection.style.display = "block";
+    // Smooth transition from skeleton to results
+    skeletonLoader.classList.add("fade-out");
+    setTimeout(() => {
+      skeletonLoader.classList.remove("active");
+      skeletonLoader.style.display = "none";
+      resultsSection.style.display = "block";
+      // Force reflow for smooth opacity/translate transition
+      void resultsSection.offsetHeight;
+      resultsSection.classList.add("visible");
+    }, 240);
   }
 
   function renderAnswerData(data) {
@@ -63,6 +71,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (data.emergency_banner) {
       emergencyBanner.style.display = "block";
       emergencyBanner.textContent = data.emergency_banner;
+      emergencyBanner.classList.add("stagger-item");
     } else {
       emergencyBanner.style.display = "none";
     }
@@ -82,23 +91,36 @@ document.addEventListener("DOMContentLoaded", async () => {
     sentencesContainer.innerHTML = "";
 
     if (data.status === "self_harm") {
-      sentencesContainer.innerHTML = `<p style="color:#d63031; font-weight:bold; font-size:18px;">${data.self_harm_message}</p>`;
-      sourcesContainer.innerHTML = "<p>No reference sources needed for safety guidance.</p>";
+      sentencesContainer.innerHTML = `
+        <div class="stagger-item" style="background:#fff5f5; padding:24px; border-radius:20px; border:1px solid #feb2b2;">
+          <p style="color:#d63031; font-weight:700; font-size:1.15rem; line-height:1.6;">${data.self_harm_message}</p>
+        </div>
+      `;
+      sourcesContainer.innerHTML = "<p class='stagger-item text-subtitle'>No reference context needed for safety guidance.</p>";
       return;
     }
 
     if (data.status === "abstained") {
       const reason = data.abstain ? data.abstain.reason : "Insufficient evidence strength.";
       sentencesContainer.innerHTML = `
-        <div style="background:#fff5f5; padding:24px; border-radius:20px; border:1px solid #feb2b2;">
-          <h3 style="color:#c53030; font-size:22px; margin-bottom:12px;">I don't know based on the provided pages.</h3>
-          <p style="font-size:16px;"><strong>Abstention Reason:</strong> ${reason}</p>
+        <div class="stagger-item" style="background:#f9f9fb; padding:28px; border-radius:20px; border:1px solid var(--border-light);">
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+            <i class="fa-solid fa-circle-info" style="color:#888888; font-size:1.2rem;"></i>
+            <h3 style="color:var(--text-pure); font-size:1.35rem; font-weight:800; letter-spacing:-0.02em;">I don't know based on the provided pages.</h3>
+          </div>
+          <p style="font-size:0.95rem; color:var(--text-muted); line-height:1.6;">
+            <strong>Abstention Reason:</strong> ${reason}
+          </p>
+          <div style="margin-top:14px; font-size:0.85rem; color:#888888;">
+            The indexed medical pages do not contain verified factual support for this specific inquiry.
+          </div>
         </div>
       `;
     } else {
-      data.sentences.forEach((s) => {
+      data.sentences.forEach((s, idx) => {
         const sDiv = document.createElement("div");
-        sDiv.className = "sentence-item";
+        sDiv.className = "sentence-item stagger-item";
+        sDiv.style.animationDelay = `${(idx * 0.08).toFixed(2)}s`;
 
         const badgeClass = s.support && s.support.supported ? "badge-supported" : "badge-not-found";
         const badgeText = s.support && s.support.supported ? "Supported" : "Not Found In Source";
@@ -134,12 +156,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
     });
 
-    // Render Sources
+    // Render Sources with cascading delay
     sourcesContainer.innerHTML = "";
     if (data.sources && data.sources.length > 0) {
-      data.sources.forEach((src) => {
+      data.sources.forEach((src, idx) => {
         const srcDiv = document.createElement("div");
-        srcDiv.className = "source-card";
+        srcDiv.className = "source-card stagger-item";
+        srcDiv.style.animationDelay = `${(0.15 + idx * 0.08).toFixed(2)}s`;
         srcDiv.id = `source_${src.n}`;
 
         srcDiv.innerHTML = `
@@ -157,7 +180,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
     }
 
-    // Render IR Inspector
+    // Render IR Inspector with smooth delays
     if (data.inspector) {
       document.getElementById("inspectorSparseList").innerHTML = (data.inspector.sparse_top5 || []).map((id) => `<li>${id}</li>`).join("");
       document.getElementById("inspectorDenseList").innerHTML = (data.inspector.dense_top5 || []).map((id) => `<li>${id}</li>`).join("");
