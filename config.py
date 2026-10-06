@@ -7,6 +7,21 @@ No magic numbers allowed in other files!
 import os
 from pathlib import Path
 
+
+def _load_dotenv(path: Path) -> None:
+    """Minimal .env loader (KEY=VALUE per line); real environment variables win."""
+    if not path.exists():
+        return
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+
+
+_load_dotenv(Path(__file__).parent.resolve() / ".env")
+
 # Base Paths
 BASE_DIR = Path(__file__).parent.resolve()
 DATA_DIR = BASE_DIR / "data"
@@ -69,14 +84,18 @@ RRF_K = 60
 HYBRID_ALPHA = 0.5  # Weight for sparse in weighted sum fusion (1-alpha for dense)
 
 # RAG & LLM Configuration
+# Provider order: Groq (if GROQ_API_KEY set) -> local Ollama -> offline extractive mock.
+# Ollama model tags contain ':' (e.g. llama3.2:1b); Groq model ids do not.
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "").strip()
+GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_MODELS = ["openai/gpt-oss-120b", "openai/gpt-oss-20b"]  # verify via GET /openai/v1/models
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-AVAILABLE_MODELS = ["llama3.2:1b", "llama3.2:3b", "llama3.1:8b", "mock-demo"]
-DEFAULT_MODEL = "llama3.2:1b"
+OLLAMA_MODELS = ["llama3.2:1b", "llama3.2:3b", "llama3.1:8b"]
+MOCK_MODEL = "mock-demo"
+AVAILABLE_MODELS = (GROQ_MODELS if GROQ_API_KEY else []) + OLLAMA_MODELS + [MOCK_MODEL]
+DEFAULT_MODEL = GROQ_MODELS[0] if GROQ_API_KEY else OLLAMA_MODELS[0]
 LLM_TEMPERATURE = 0.0
-
-# Optional OpenAI-compatible Endpoint fallback (e.g. vLLM / Groq / LocalAI / LM Studio)
-OPENAI_API_BASE = os.getenv("OPENAI_API_BASE", "")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+LLM_TIMEOUT_SECONDS = 20
 
 # Abstention Thresholds (Tuned on dev set)
 ABSTAIN_SCORE_THRESHOLD = 0.12

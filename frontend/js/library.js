@@ -1,5 +1,8 @@
 import { fetchLibrary } from "./api.js";
 
+const escapeHtml = (value) =>
+  String(value ?? "").replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+
 document.addEventListener("DOMContentLoaded", () => {
   let currentPage = 1;
   const limit = 12;
@@ -67,15 +70,15 @@ document.addEventListener("DOMContentLoaded", () => {
         card.style.animationDelay = `${(idx * 0.04).toFixed(2)}s`;
         card.innerHTML = `
           <div>
-            <div class="library-card-id">Chunk #${chunk.chunk_id} • Doc #${chunk.qa_id}</div>
-            <h4>${chunk.question}</h4>
-            <p>${chunk.text}</p>
+            <div class="library-card-id">Chunk #${escapeHtml(chunk.chunk_id)} • Doc #${escapeHtml(chunk.qa_id)}</div>
+            <h4>${escapeHtml(chunk.question)}</h4>
+            <p>${escapeHtml(chunk.text)}</p>
           </div>
         `;
         libraryGrid.appendChild(card);
       });
     } catch (err) {
-      libraryGrid.innerHTML = `<p style="color:#c53030; font-weight:600;">Error: ${err.message}</p>`;
+      libraryGrid.innerHTML = `<p style="color:#c53030; font-weight:600;">Error: ${escapeHtml(err.message)}</p>`;
     }
   }
 

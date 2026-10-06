@@ -38,11 +38,9 @@ htmlcov/
 # macOS
 .DS_Store
 
-# Large datasets & binary caches
-data/train.csv
-data/processed/medquad_chunks.json
-data/embeddings/*.npy
-data/embeddings/*.faiss
+# Secrets
+.env
+
+# Generated caches (rebuilt automatically on first run)
 data/processed/*.pkl
-data/llm_cache.json
-data/embeddings/chunk_ids.json
+data/processed/*.npy

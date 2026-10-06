@@ -4,6 +4,11 @@
 
 import { askQuestion } from "./api.js";
 
+const escapeHtml = (value) =>
+  String(value ?? "").replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+
+const GENERATOR_LABELS = { groq: "Groq", ollama: "Ollama", mock: "Offline extractive" };
+
 document.addEventListener("DOMContentLoaded", async () => {
   const urlParams = new URLSearchParams(window.location.search);
   const question = urlParams.get("q");
@@ -30,12 +35,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Retrieve options from localStorage
   const retriever = localStorage.getItem("hn_retriever") || "hybrid";
   const topK = parseInt(localStorage.getItem("hn_topK") || "5", 10);
-  const model = localStorage.getItem("hn_model") || "llama3.2:1b";
+  const model = localStorage.getItem("hn_model") || null; // null -> server default
   const enableAbstain = localStorage.getItem("hn_abstain") !== "false";
   const enableChecker = localStorage.getItem("hn_checker") !== "false";
 
   tagRetriever.textContent = `Retriever: ${retriever.toUpperCase()}`;
-  tagModel.textContent = `Model: ${model}`;
+  tagModel.textContent = "Model: loading...";
 
   const minLoadTime = 1750;
   const startTime = Date.now();
@@ -83,7 +88,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     clearTimeout(step2Timer);
     clearTimeout(step3Timer);
     queryTitle.textContent = "Error Loading Answer";
-    sentencesContainer.innerHTML = `<p style="color:#c5221f; font-weight:700;">${err.message}</p>`;
+    sentencesContainer.innerHTML = `<p style="color:#c5221f; font-weight:700;">${escapeHtml(err.message)}</p>`;
   } finally {
     // Smooth transition from skeleton to results
     skeletonLoader.classList.add("fade-out");
@@ -99,6 +104,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   function renderAnswerData(data) {
     tagStatus.textContent = `Status: ${data.status.toUpperCase()}`;
+    const engine = GENERATOR_LABELS[data.generator];
+    tagModel.textContent = engine ? `Model: ${data.model} (${engine})` : `Model: ${data.model}`;
 
     // Emergency Banner
     if (data.emergency_banner) {
@@ -126,7 +133,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (data.status === "self_harm") {
       sentencesContainer.innerHTML = `
         <div class="stagger-item" style="background:#fff5f5; padding:24px; border-radius:20px; border:1px solid #feb2b2;">
-          <p style="color:#d63031; font-weight:700; font-size:1.15rem; line-height:1.6;">${data.self_harm_message}</p>
+          <p style="color:#d63031; font-weight:700; font-size:1.15rem; line-height:1.6;">${escapeHtml(data.self_harm_message)}</p>
         </div>
       `;
       sourcesContainer.innerHTML = "<p class='stagger-item text-subtitle'>No reference context needed for safety guidance.</p>";
@@ -142,7 +149,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             <h3 style="color:var(--text-pure); font-size:1.35rem; font-weight:800; letter-spacing:-0.02em;">I don't know based on the provided pages.</h3>
           </div>
           <p style="font-size:0.95rem; color:var(--text-muted); line-height:1.6;">
-            <strong>Abstention Reason:</strong> ${reason}
+            <strong>Abstention Reason:</strong> ${escapeHtml(reason)}
           </p>
           <div style="margin-top:14px; font-size:0.85rem; color:#888888;">
             The indexed medical pages do not contain verified factual support for this specific inquiry.
@@ -166,7 +173,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         sDiv.innerHTML = `
-          <span>${s.text}</span>
+          <span>${escapeHtml(s.text)}</span>
           ${citationHTML}
           <span class="answer-badge ${badgeClass}" style="margin-left:12px; font-size:11px;">${badgeText}</span>
         `;
@@ -202,12 +209,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         srcDiv.innerHTML = `
           <div style="margin-bottom:10px;">
             <span style="font-weight:900; color:#111111; font-size:18px; margin-right:8px;">[${src.n}]</span>
-            <strong style="font-size:18px; color:#111111;">${src.question}</strong>
+            <strong style="font-size:18px; color:#111111;">${escapeHtml(src.question)}</strong>
           </div>
-          <p style="font-size:15px; color:#475569; line-height:1.7;">${src.text}</p>
+          <p style="font-size:15px; color:#475569; line-height:1.7;">${escapeHtml(src.text)}</p>
           <div style="margin-top:14px; font-size:13px; color:#64748b; display:flex; gap:20px;">
             <span>Retrieval Score: <strong>${src.score}</strong></span>
-            <span>Matched Terms: ${src.matched_terms ? src.matched_terms.join(", ") : "N/A"}</span>
+            <span>Matched Terms: ${src.matched_terms && src.matched_terms.length ? escapeHtml(src.matched_terms.join(", ")) : "N/A"}</span>
           </div>
         `;
         sourcesContainer.appendChild(srcDiv);

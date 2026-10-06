@@ -94,7 +94,7 @@ def load_dataset(csv_path: Path = config.RAW_CSV_PATH) -> Tuple[List[Dict[str, A
     return records, stats
 
 
-def generate_sample_dataset(target_path: Path, num_records: int = 500) -> None:
+def generate_sample_dataset(target_path: Path) -> None:
     """
     Generates a rich, realistic health Q&A CSV dataset for testing & demonstration
     if no raw Kaggle CSV is present locally.
@@ -190,39 +190,16 @@ def generate_sample_dataset(target_path: Path, num_records: int = 500) -> None:
          "Lifestyle")
     ]
     
-    rows = []
-    variation_prefixes = [
-        "",
-        "Clinical Guide: ",
-        "Patient Question: ",
-        "Medical FAQ: ",
-        "Doctor's Advice: ",
-        "Health Inquiry: ",
-        "Symptom Checker: ",
-        "Treatment Protocol: ",
-        "Evidence Review: ",
-        "Clinical Consultation: "
+    rows = [
+        {
+            "qa_id": f"qa_{idx:05d}",
+            "question": question,
+            "answer": answer,
+            "category": category,
+            "source": "HealthNest Curated Q&A"
+        }
+        for idx, (question, answer, category) in enumerate(base_templates, start=1)
     ]
-    
-    idx = 1
-    for var_idx, prefix in enumerate(variation_prefixes):
-        for tpl in base_templates:
-            q_text = f"{prefix}{tpl[0]}" if prefix else tpl[0]
-            if var_idx > 0:
-                q_text = f"{q_text} [Clinical Case #{idx}]"
-            a_text = f"{tpl[1]} Verified clinical evidence documented for case #{idx}."
-            rows.append({
-                "qa_id": f"qa_{idx:05d}",
-                "question": q_text,
-                "answer": a_text,
-                "category": tpl[2],
-                "source": f"Verified Clinical Journal Vol {10 + (idx % 20)}"
-            })
-            idx += 1
-            if len(rows) >= num_records:
-                break
-        if len(rows) >= num_records:
-            break
 
     with open(target_path, "w", encoding="utf-8", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=["qa_id", "question", "answer", "category", "source"])

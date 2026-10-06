@@ -1,79 +1,88 @@
 """
 backend/rag/llm_client.py
 LLM Client Interface for HealthNest.
-Interfaces with Ollama API (/api/chat) via HTTP requests.
-Supports configurable model sizes (llama3.2:1b, llama3.2:3b, llama3.1:8b).
-Supports fallback to OpenAI-compatible endpoint or smart mock mode if Ollama server is offline.
 
-Temperature set to 0.0 for deterministic, verifiable answers.
+Provider chain (first that succeeds wins):
+  1. Groq cloud API   - when GROQ_API_KEY is configured and the model is a Groq model id.
+  2. Ollama (local)   - model tags such as llama3.2:1b.
+  3. Offline mock     - deterministic extractive answer built from the retrieved context,
+                        so the system still works with no network / no model server.
+
+Temperature is 0.0 for deterministic, verifiable answers.
 """
 
-import json
 import logging
+import re
+from typing import List, Dict, Any, Tuple
+
 import requests
-from typing import List, Dict, Any, Optional
+
 import config
+from backend.ir.text import tokenize
 
 logger = logging.getLogger(__name__)
+
+
+def _call_groq(messages: List[Dict[str, str]], model: str, temperature: float) -> str:
+    res = requests.post(
+        config.GROQ_API_URL,
+        headers={
+            "Authorization": f"Bearer {config.GROQ_API_KEY}",
+            "Content-Type": "application/json",
+        },
+        json={"model": model, "messages": messages, "temperature": temperature},
+        timeout=config.LLM_TIMEOUT_SECONDS,
+    )
+    res.raise_for_status()
+    return res.json()["choices"][0]["message"]["content"].strip()
+
+
+def _call_ollama(messages: List[Dict[str, str]], model: str, temperature: float) -> str:
+    res = requests.post(
+        f"{config.OLLAMA_BASE_URL.rstrip('/')}/api/chat",
+        json={
+            "model": model,
+            "messages": messages,
+            "stream": False,
+            "options": {"temperature": temperature},
+        },
+        timeout=config.LLM_TIMEOUT_SECONDS,
+    )
+    res.raise_for_status()
+    return res.json().get("message", {}).get("content", "").strip()
 
 
 def generate_llm_response(
     messages: List[Dict[str, str]],
     model: str = config.DEFAULT_MODEL,
-    base_url: str = config.OLLAMA_BASE_URL,
-    temperature: float = config.LLM_TEMPERATURE
-) -> str:
+    temperature: float = config.LLM_TEMPERATURE,
+) -> Tuple[str, str]:
     """
-    Sends chat request to Ollama /api/chat endpoint.
-    If server is unreachable or model is not found, falls back gracefully.
+    Returns (answer_text, provider) where provider is 'groq', 'ollama' or 'mock'.
+    Never raises on provider failure; degrades to the next provider instead.
     """
-    # 1. Try Ollama local endpoint
-    try:
-        url = f"{base_url.rstrip('/')}/api/chat"
-        payload = {
-            "model": model,
-            "messages": messages,
-            "stream": False,
-            "options": {
-                "temperature": temperature
-            }
-        }
-        response = requests.post(url, json=payload, timeout=12)
-        if response.status_code == 200:
-            data = response.json()
-            return data.get("message", {}).get("content", "").strip()
-        else:
-            logger.warning(f"Ollama returned HTTP {response.status_code}: {response.text}")
-    except requests.exceptions.RequestException as e:
-        logger.info(f"Ollama server not reachable at {base_url} ({e}). Checking OpenAI endpoint / Mock mode...")
+    if model != config.MOCK_MODEL:
+        is_ollama_tag = ":" in model
+        if config.GROQ_API_KEY and not is_ollama_tag:
+            try:
+                return _call_groq(messages, model, temperature), "groq"
+            except Exception as exc:
+                logger.warning("Groq call failed (%s); falling back.", exc)
+        if is_ollama_tag:
+            try:
+                text = _call_ollama(messages, model, temperature)
+                if text:
+                    return text, "ollama"
+            except Exception as exc:
+                logger.info("Ollama unavailable (%s); falling back.", exc)
+            if config.GROQ_API_KEY:  # local model missing -> use hosted default
+                try:
+                    return _call_groq(messages, config.GROQ_MODELS[0], temperature), "groq"
+                except Exception as exc:
+                    logger.warning("Groq fallback failed (%s).", exc)
 
-    # 2. Try OpenAI-compatible endpoint if configured
-    if config.OPENAI_API_BASE:
-        try:
-            url = f"{config.OPENAI_API_BASE.rstrip('/')}/v1/chat/completions"
-            headers = {"Content-Type": "application/json"}
-            if config.OPENAI_API_KEY:
-                headers["Authorization"] = f"Bearer {config.OPENAI_API_KEY}"
-            
-            payload = {
-                "model": model,
-                "messages": messages,
-                "temperature": temperature
-            }
-            res = requests.post(url, headers=headers, json=payload, timeout=15)
-            if res.status_code == 200:
-                data = res.json()
-                return data["choices"][0]["message"]["content"].strip()
-        except Exception as ex:
-            logger.warning(f"OpenAI endpoint call failed: {ex}")
-
-    # 3. Fallback Smart Mock Answer Generator (ensures system works standalone during demo/evaluation)
-    logger.info("Using Fallback RAG Generator (Ollama offline/mock mode).")
-    return generate_mock_rag_answer(messages)
-
-
-import re
-from backend.ir.text import tokenize
+    logger.info("Using offline extractive generator.")
+    return generate_mock_rag_answer(messages), "mock"
 
 
 def generate_mock_rag_answer(messages: List[Dict[str, str]]) -> str:

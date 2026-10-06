@@ -48,8 +48,12 @@ def build_benchmark_testset():
 
     random.shuffle(unique_records)
     
-    dev_set = unique_records[:200]
-    test_set = unique_records[200:500] if len(unique_records) >= 500 else unique_records[200:]
+    if len(unique_records) > 200:
+        dev_set = unique_records[:200]
+        test_set = unique_records[200:500]
+    else:  # small curated corpus: no split, evaluate on every unique question
+        dev_set = []
+        test_set = unique_records
 
     # Generate unanswerable non-health queries
     non_health_queries = [

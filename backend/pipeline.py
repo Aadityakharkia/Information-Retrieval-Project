@@ -26,6 +26,9 @@ from backend.data.chunker import chunk_dataset
 
 logger = logging.getLogger(__name__)
 
+RETRIEVER_TYPES = ("sparse", "bm25", "dense", "hybrid")
+MAX_TOP_K = 10
+
 
 class HealthNestPipeline:
     def __init__(self):
@@ -78,6 +81,10 @@ class HealthNestPipeline:
         """
         start_time = time.time()
         self.initialize()
+
+        if retriever_type not in RETRIEVER_TYPES:
+            raise ValueError(f"Unknown retriever_type '{retriever_type}'. Choose from {RETRIEVER_TYPES}.")
+        top_k = max(1, min(int(top_k), MAX_TOP_K))
 
         timings = {}
 
@@ -214,7 +221,8 @@ class HealthNestPipeline:
                 "abstain": abstain_decision,
                 "timings": timings,
                 "retriever": retriever_type,
-                "model": model
+                "model": model,
+                "generator": gen_result["provider"]
             }
 
         # Step 6: Fact Verification Checking
@@ -247,8 +255,27 @@ class HealthNestPipeline:
             "abstain": abstain_decision,
             "timings": timings,
             "retriever": retriever_type,
-            "model": model
+            "model": model,
+            "generator": gen_result["provider"]
         }
+
+    def search(self, query: str, retriever_type: str = "hybrid", top_k: int = 5) -> List[Dict[str, Any]]:
+        """Retrieval-only search (no generation / abstention)."""
+        self.initialize()
+        if retriever_type not in RETRIEVER_TYPES:
+            raise ValueError(f"Unknown retriever_type '{retriever_type}'. Choose from {RETRIEVER_TYPES}.")
+        top_k = max(1, min(int(top_k), MAX_TOP_K))
+        expanded_q, _ = self.hinglish_expander.expand_query(query)
+
+        if retriever_type == "sparse":
+            return TfIdfRetriever(self.index).search(expanded_q, top_k=top_k)
+        if retriever_type == "bm25":
+            return BM25Retriever(self.index).search(expanded_q, top_k=top_k)
+        if retriever_type == "dense":
+            return self.dense_retriever.search(expanded_q, top_k=top_k)
+        sparse_res = TfIdfRetriever(self.index).search(expanded_q, top_k=top_k * 2)
+        dense_res = self.dense_retriever.search(expanded_q, top_k=top_k * 2)
+        return HybridRetriever().fuse(sparse_res, dense_res, top_k=top_k, fusion_method="rrf")
 
 
     def suggest_queries(self, prefix: str, limit: int = 8) -> List[str]:
@@ -370,8 +397,10 @@ class HealthNestPipeline:
 # Singleton pipeline instance
 _pipeline_instance = HealthNestPipeline()
 
-def ask(question: str, **kwargs) -> Dict[str, Any]:
-    return _pipeline_instance.ask(question, **kwargs)
+
+def get_pipeline() -> HealthNestPipeline:
+    return _pipeline_instance
+
 
 def suggest(prefix: str, limit: int = 6) -> List[str]:
     return _pipeline_instance.suggest_queries(prefix, limit=limit)
