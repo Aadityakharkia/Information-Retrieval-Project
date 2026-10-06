@@ -199,29 +199,23 @@ body {
     border-color: var(--text-pure);
 }
 
-/* BENTO HERO SECTION */
+/* BENTO HERO SECTION - SPACIOUS LUXURY AESTHETIC */
 .hero-bento {
-    padding: 0.5rem 0 3rem 0;
+    padding: 1.5rem 0 4rem 0;
 }
 .bento-grid {
     display: grid;
     grid-template-columns: 1.15fr 0.85fr;
-    gap: 1.5rem;
-    min-height: 650px;
+    gap: 2.2rem;
+    min-height: 680px;
 }
 .bento-col-left {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 2rem;
     position: relative;
     z-index: 50;
     overflow: visible;
-}
-.bento-squares {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
-    height: 190px;
 }
 .bento-box {
     background: var(--bg-card);
@@ -229,13 +223,48 @@ body {
     overflow: hidden;
     position: relative;
     border: 1px solid var(--border-light);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
 }
 
 .hero-search-box {
+    padding: 3.6rem 3.2rem;
     overflow: visible !important;
     z-index: 100 !important;
 }
-.box-p { padding: 2.2rem; }
+
+.hero-cta-box {
+    padding: 2.6rem 3.2rem;
+}
+
+.bento-trust-row {
+    display: flex;
+    gap: 22px;
+    flex-wrap: wrap;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #666666;
+}
+.bento-trust-row span {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+}
+.bento-trust-row i {
+    color: var(--text-pure);
+    font-size: 0.72rem;
+}
+
+.box-p { padding: 2.5rem; }
+
+/* Page Exit Transition */
+body.page-exit {
+    opacity: 0 !important;
+    transform: translateY(-8px) !important;
+    transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
 
 .square-box {
     height: 100%;

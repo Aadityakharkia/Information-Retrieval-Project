@@ -106,9 +106,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const q = queryText || (searchInput ? searchInput.value.trim() : "");
     if (!q) return;
 
-    // Navigate to dedicated results page /answer.html
-    const targetUrl = `/answer.html?q=${encodeURIComponent(q)}`;
-    window.location.href = targetUrl;
+    if (btnSearchSubmit) {
+      btnSearchSubmit.innerHTML = `<i class="fa-solid fa-spinner fa-spin" style="font-size:16px;"></i>`;
+    }
+    document.body.classList.add("page-exit");
+    setTimeout(() => {
+      window.location.href = `/answer.html?q=${encodeURIComponent(q)}`;
+    }, 280);
   }
 
   if (btnSearchSubmit) {

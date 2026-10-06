@@ -37,6 +37,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   tagRetriever.textContent = `Retriever: ${retriever.toUpperCase()}`;
   tagModel.textContent = `Model: ${model}`;
 
+  const minLoadTime = 800;
+  const startTime = Date.now();
+
   try {
     const data = await askQuestion({
       question,
@@ -46,6 +49,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       enable_abstain: enableAbstain,
       enable_checker: enableChecker
     });
+
+    const elapsed = Date.now() - startTime;
+    if (elapsed < minLoadTime) {
+      await new Promise((resolve) => setTimeout(resolve, minLoadTime - elapsed));
+    }
 
     renderAnswerData(data);
   } catch (err) {
@@ -61,7 +69,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       // Force reflow for smooth opacity/translate transition
       void resultsSection.offsetHeight;
       resultsSection.classList.add("visible");
-    }, 240);
+    }, 380);
   }
 
   function renderAnswerData(data) {
