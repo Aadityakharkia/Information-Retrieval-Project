@@ -1,0 +1,92 @@
+[
+  {
+    "topic": "Lymphocytic Choriomeningitis symptoms",
+    "en_sparse_score": 0.37707,
+    "en_sparse_hit": false,
+    "hi_sparse_score": 0.14688,
+    "hi_sparse_hit": false,
+    "hi_dense_score": 0.489,
+    "hi_dense_hit": false
+  },
+  {
+    "topic": "Diabetes treatment",
+    "en_sparse_score": 0.45562,
+    "en_sparse_hit": true,
+    "hi_sparse_score": 0.08735,
+    "hi_sparse_hit": true,
+    "hi_dense_score": 0.4448,
+    "hi_dense_hit": true
+  },
+  {
+    "topic": "Hypertension causes",
+    "en_sparse_score": 0.46282,
+    "en_sparse_hit": false,
+    "hi_sparse_score": 0.2053,
+    "hi_sparse_hit": true,
+    "hi_dense_score": 0.5806,
+    "hi_dense_hit": true
+  },
+  {
+    "topic": "Asthma diagnosis",
+    "en_sparse_score": 0.34337,
+    "en_sparse_hit": true,
+    "hi_sparse_score": 0.14005,
+    "hi_sparse_hit": true,
+    "hi_dense_score": 0.4578,
+    "hi_dense_hit": true
+  },
+  {
+    "topic": "Parkinson disease symptoms",
+    "en_sparse_score": 0.41965,
+    "en_sparse_hit": true,
+    "hi_sparse_score": 0.15834,
+    "hi_sparse_hit": true,
+    "hi_dense_score": 0.4319,
+    "hi_dense_hit": true
+  },
+  {
+    "topic": "Alzheimer disease causes",
+    "en_sparse_score": 0.35391,
+    "en_sparse_hit": true,
+    "hi_sparse_score": 0.17211,
+    "hi_sparse_hit": true,
+    "hi_dense_score": 0.4669,
+    "hi_dense_hit": true
+  },
+  {
+    "topic": "Glaucoma exams and tests",
+    "en_sparse_score": 0.30544,
+    "en_sparse_hit": true,
+    "hi_sparse_score": 0.0967,
+    "hi_sparse_hit": true,
+    "hi_dense_score": 0.4208,
+    "hi_dense_hit": true
+  },
+  {
+    "topic": "Hepatitis C transmission",
+    "en_sparse_score": 0.28953,
+    "en_sparse_hit": true,
+    "hi_sparse_score": 0.11328,
+    "hi_sparse_hit": true,
+    "hi_dense_score": 0.4849,
+    "hi_dense_hit": true
+  },
+  {
+    "topic": "Tuberculosis prevention",
+    "en_sparse_score": 0.27084,
+    "en_sparse_hit": true,
+    "hi_sparse_score": 0.1843,
+    "hi_sparse_hit": true,
+    "hi_dense_score": 0.4494,
+    "hi_dense_hit": true
+  },
+  {
+    "topic": "Depression medications",
+    "en_sparse_score": 0.35288,
+    "en_sparse_hit": true,
+    "hi_sparse_score": 0.12561,
+    "hi_sparse_hit": true,
+    "hi_dense_score": 0.3786,
+    "hi_dense_hit": true
+  }
+]

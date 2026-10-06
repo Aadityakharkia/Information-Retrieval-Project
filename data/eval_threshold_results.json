@@ -1,0 +1,58 @@
+[
+  {
+    "threshold": 0.1,
+    "in_dist_answered_pct": 100.0,
+    "in_dist_refused_pct": 0.0,
+    "ood_refused_safety_pct": 0.0,
+    "ood_false_accept_pct": 100.0
+  },
+  {
+    "threshold": 0.15,
+    "in_dist_answered_pct": 100.0,
+    "in_dist_refused_pct": 0.0,
+    "ood_refused_safety_pct": 40.0,
+    "ood_false_accept_pct": 60.0
+  },
+  {
+    "threshold": 0.2,
+    "in_dist_answered_pct": 100.0,
+    "in_dist_refused_pct": 0.0,
+    "ood_refused_safety_pct": 90.0,
+    "ood_false_accept_pct": 10.0
+  },
+  {
+    "threshold": 0.25,
+    "in_dist_answered_pct": 100.0,
+    "in_dist_refused_pct": 0.0,
+    "ood_refused_safety_pct": 100.0,
+    "ood_false_accept_pct": 0.0
+  },
+  {
+    "threshold": 0.28,
+    "in_dist_answered_pct": 96.0,
+    "in_dist_refused_pct": 4.0,
+    "ood_refused_safety_pct": 100.0,
+    "ood_false_accept_pct": 0.0
+  },
+  {
+    "threshold": 0.32,
+    "in_dist_answered_pct": 92.0,
+    "in_dist_refused_pct": 8.0,
+    "ood_refused_safety_pct": 100.0,
+    "ood_false_accept_pct": 0.0
+  },
+  {
+    "threshold": 0.36,
+    "in_dist_answered_pct": 80.0,
+    "in_dist_refused_pct": 20.0,
+    "ood_refused_safety_pct": 100.0,
+    "ood_false_accept_pct": 0.0
+  },
+  {
+    "threshold": 0.4,
+    "in_dist_answered_pct": 64.0,
+    "in_dist_refused_pct": 36.0,
+    "ood_refused_safety_pct": 100.0,
+    "ood_false_accept_pct": 0.0
+  }
+]
