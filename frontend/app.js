@@ -320,3 +320,65 @@ async function inspectTermPostings(term) {
 function closePostingsModal() {
   document.getElementById('postingsModal').classList.add('hidden');
 }
+
+// Live IR Typeahead Auto-Suggest Listener
+document.addEventListener('DOMContentLoaded', () => {
+  const queryInput = document.getElementById('queryInput');
+  const suggestDropdown = document.getElementById('suggestDropdown');
+  let debounceTimer = null;
+
+  if (queryInput && suggestDropdown) {
+    queryInput.addEventListener('input', (e) => {
+      clearTimeout(debounceTimer);
+      const val = e.target.value.trim();
+      if (val.length < 1) {
+        suggestDropdown.classList.remove('active');
+        suggestDropdown.innerHTML = '';
+        return;
+      }
+
+      debounceTimer = setTimeout(async () => {
+        try {
+          const res = await fetch(`/api/suggest?q=${encodeURIComponent(val)}`);
+          if (!res.ok) return;
+          const data = await res.json();
+          const suggestions = data.suggestions || [];
+          if (suggestions.length === 0) {
+            suggestDropdown.classList.remove('active');
+            suggestDropdown.innerHTML = '';
+            return;
+          }
+
+          suggestDropdown.innerHTML = '';
+          suggestions.forEach((item) => {
+            const div = document.createElement('div');
+            div.className = 'suggest-item';
+            div.innerHTML = `
+              <svg class="suggest-item-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <span>${item}</span>
+            `;
+            div.addEventListener('click', () => {
+              queryInput.value = item;
+              suggestDropdown.classList.remove('active');
+              submitQuery();
+            });
+            suggestDropdown.appendChild(div);
+          });
+
+          suggestDropdown.classList.add('active');
+        } catch (err) {
+          console.error("Auto-suggest error:", err);
+        }
+      }, 100);
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!suggestDropdown.contains(e.target) && e.target !== queryInput) {
+        suggestDropdown.classList.remove('active');
+      }
+    });
+  }
+});
