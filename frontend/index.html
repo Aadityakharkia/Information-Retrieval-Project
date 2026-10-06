@@ -9,7 +9,11 @@
 </head>
 <body>
 
-  <div class="cloud-bg"></div>
+  <!-- Floating Ambient Blobs -->
+  <div class="cloud-bg">
+    <div class="blob-1"></div>
+    <div class="blob-2"></div>
+  </div>
 
   <div class="app-wrapper">
 
@@ -17,7 +21,7 @@
     <header>
       <a href="/" class="logo-group">
         <div class="logo-asterisk">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
             <path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M4.93 19.07L19.07 4.93"/>
           </svg>
         </div>
@@ -33,7 +37,7 @@
       <div class="nav-actions">
         <button id="btnGetStarted" class="btn-get-started">Get Started</button>
         <button id="btnSettings" class="btn-avatar-settings" title="Settings & Parameters">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2d3436" stroke-width="2">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2d3436" stroke-width="2">
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
             <circle cx="12" cy="7" r="4"/>
           </svg>
@@ -90,13 +94,13 @@
 
         <!-- Search Bar Pill -->
         <div class="search-pill-container" id="searchContainer">
-          <svg class="search-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <svg class="search-icon" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <circle cx="11" cy="11" r="8"/>
             <line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
           <input type="text" id="searchInput" class="search-input" placeholder="Ask a health question..." autocomplete="off">
-          <button id="btnSearchSubmit" class="btn-search-submit">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+          <button id="btnSearchSubmit" class="btn-search-submit" title="Search">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
               <line x1="5" y1="12" x2="19" y2="12"/>
               <polyline points="12 5 19 12 12 19"/>
             </svg>
@@ -105,10 +109,9 @@
 
         <!-- Three Category Cards -->
         <div class="category-cards-grid">
-          <div class="cat-card" data-category="general">
+          <div class="cat-card" data-question="What are common remedies for severe stomach ache and gastritis?">
             <div class="cat-icon-wrapper">
-              <!-- Stethoscope SVG Icon -->
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6c5ce7" stroke-width="2">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#6c5ce7" stroke-width="2">
                 <path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1"/>
                 <path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/>
                 <circle cx="20" cy="10" r="2"/>
@@ -117,10 +120,9 @@
             <h4>General Health</h4>
           </div>
 
-          <div class="cat-card" data-category="medications">
+          <div class="cat-card" data-question="What is the recommended dosage for Paracetamol in adults?">
             <div class="cat-icon-wrapper">
-              <!-- Pill SVG Icon -->
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6c5ce7" stroke-width="2">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#6c5ce7" stroke-width="2">
                 <path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/>
                 <path d="m8.5 8.5 7 7"/>
               </svg>
@@ -128,10 +130,9 @@
             <h4>Medications</h4>
           </div>
 
-          <div class="cat-card" data-category="lifestyle">
+          <div class="cat-card" data-question="How to improve sleep quality and overcome insomnia?">
             <div class="cat-icon-wrapper">
-              <!-- Heart SVG Icon -->
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ff7675" stroke-width="2">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#ff7675" stroke-width="2">
                 <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
               </svg>
             </div>
@@ -142,63 +143,48 @@
 
       <!-- Hero Image Wrapper -->
       <div class="hero-image-wrapper">
-        <img src="assets/hero.jpg" alt="Health & Wellness" class="hero-img" id="heroImg" onerror="this.src='https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=800&q=80'">
+        <img src="assets/hero.jpg" alt="Luxury Health & Wellness" class="hero-img" id="heroImg">
       </div>
     </main>
 
-    <!-- Skeleton Loading Animation -->
-    <div id="skeletonLoader" class="skeleton-loader">
-      <div class="skeleton-line" style="width: 40%;"></div>
-      <div class="skeleton-line" style="width: 85%;"></div>
-      <div class="skeleton-line" style="width: 75%;"></div>
-      <div class="skeleton-line" style="width: 60%;"></div>
-    </div>
-
-    <!-- Results Display Section -->
-    <section id="resultsSection" class="results-section">
-      
-      <!-- Emergency Banner -->
-      <div id="emergencyBanner" class="emergency-banner" style="display: none;"></div>
-
-      <!-- Answer Card -->
-      <div class="answer-card" id="answerCard">
-        <div class="answer-card-header">
-          <h2>Verified Answer</h2>
-          <span id="answerStatusBadge" class="answer-badge badge-supported">Verified</span>
+    <!-- Section: Support That Truly Matters -->
+    <section class="support-section">
+      <div class="section-header">
+        <div>
+          <h2>Support That Truly Matters</h2>
+          <p>Discover evidence-based medical responses across primary health categories.</p>
         </div>
-
-        <div id="sentencesContainer"></div>
-
-        <div class="disclaimer-footer">
-          ⚠️ Information from a Q&A dataset, not medical advice.
-        </div>
+        <a href="/library" class="btn-get-started" style="background: var(--orange-gradient);">Explore Library</a>
       </div>
 
-      <!-- Sources Section -->
-      <div class="sources-container">
-        <h3>Reference Context Pages (Sources)</h3>
-        <div id="sourcesContainer"></div>
-      </div>
+      <div class="support-grid">
+        <div class="support-card" data-question="What are the best skincare and dermatology treatments for acne?">
+          <img src="assets/skin.jpg" alt="Skin & Beauty">
+          <div class="support-card-overlay">
+            <span class="support-pill">Dermatology</span>
+            <h3>Skin & Beauty Solutions</h3>
+            <p>Nourish and protect your skin with evidence-backed remedies.</p>
+          </div>
+        </div>
 
-      <!-- Collapsible Inspector -->
-      <div class="inspector-card">
-        <h3>🔍 How Was This Found? (IR Inspector)</h3>
-        <div class="inspector-grid" id="inspectorGrid">
-          <div class="inspector-col">
-            <strong>Sparse Top-5 (TF-IDF)</strong>
-            <ul id="inspectorSparseList"></ul>
+        <div class="support-card" data-question="How to improve sleep quality and overcome insomnia?">
+          <img src="assets/sleep.jpg" alt="Sleep & Relaxation">
+          <div class="support-card-overlay">
+            <span class="support-pill">Sleep Hygiene</span>
+            <h3>Sleep & Relaxation</h3>
+            <p>Restore natural circadian rhythm and restful sleep.</p>
           </div>
-          <div class="inspector-col">
-            <strong>Dense Top-5 (MiniLM)</strong>
-            <ul id="inspectorDenseList"></ul>
-          </div>
-          <div class="inspector-col">
-            <strong>Fused Top-5 (RRF)</strong>
-            <ul id="inspectorFusedList"></ul>
+        </div>
+
+        <div class="support-card" data-question="How to manage high blood pressure naturally through exercise and diet?">
+          <img src="assets/hero.jpg" alt="Cardiology">
+          <div class="support-card-overlay">
+            <span class="support-pill">Cardiology</span>
+            <h3>Cardiovascular Health</h3>
+            <p>Maintain healthy blood pressure and heart function.</p>
           </div>
         </div>
       </div>
-
     </section>
 
   </div>

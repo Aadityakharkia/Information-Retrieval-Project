@@ -37,6 +37,11 @@ pipeline_instance = HealthNestPipeline()
 def serve_index():
     return send_from_directory(FRONTEND_DIR, "index.html")
 
+@app.route("/answer")
+@app.route("/answer.html")
+def serve_answer():
+    return send_from_directory(FRONTEND_DIR, "answer.html")
+
 @app.route("/library")
 def serve_library():
     return send_from_directory(FRONTEND_DIR, "library.html")
