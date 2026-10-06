@@ -45,33 +45,33 @@
         
         <!-- LEFT COLUMN -->
         <div class="bento-col-left reveal">
-          <!-- Top Left: Headline & Large Prominent Search Bar -->
+          <!-- Top Left: Minimalist Headline & Integrated Search Bar -->
           <div class="bento-box box-p" style="display: flex; flex-direction: column; justify-content: center; position: relative; z-index: 10;">
-            <h1 class="text-massive">Your Health Questions.<br><span class="purple-gradient-text">Verifiable Answers.</span></h1>
-            <p class="text-subtitle" style="margin-top: 0.5rem; margin-bottom: 1rem;">
-              Ask clinical health questions grounded in verified medical evidence.
+            <h1 class="text-massive">Your Health Questions.<br>Real Answers.</h1>
+            <p class="text-subtitle" style="margin-top: 0.6rem; margin-bottom: 1.2rem;">
+              Find the right medical pages. Answer only from verified evidence.
             </p>
             
-            <!-- Live Search Bar Container with Typeahead Dropdown -->
+            <!-- Minimalist Search Bar Container with Live Auto-Suggest -->
             <div class="bento-search-container">
               <div class="search-pill-container" id="searchContainer">
-                <svg class="search-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <svg class="search-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                   <circle cx="11" cy="11" r="8"/>
                   <line x1="21" y1="21" x2="16.65" y2="16.65"/>
                 </svg>
-                <input type="text" id="searchInput" class="search-input" placeholder="Type a health query (e.g. fever, diabetes, dosage)..." autocomplete="off">
+                <input type="text" id="searchInput" class="search-input" placeholder="Ask a health question (e.g. fever, diabetes, dosage)..." autocomplete="off">
                 <button id="btnSearchSubmit" class="btn-search-submit" title="Search">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <line x1="5" y1="12" x2="19" y2="12"/>
                     <polyline points="12 5 19 12 12 19"/>
                   </svg>
                 </button>
               </div>
-              <!-- Floating Live Auto-Suggest Dropdown -->
+              <!-- Floating Typeahead Auto-Suggest Dropdown -->
               <div id="suggestDropdown" class="suggest-dropdown"></div>
             </div>
 
-            <!-- Quick Test Query Chips -->
+            <!-- Minimalist Quick Query Chips -->
             <div class="quick-chips">
               <span class="chip-label">Try:</span>
               <button class="chip-btn" data-question="What are the common remedies for fever and body ache?">Fever & Body Ache</button>
@@ -83,14 +83,14 @@
           
           <!-- Middle Left: Bento Square Category Cards -->
           <div class="bento-squares">
-            <div class="bento-box square-box clickable-card" data-info-title="Symptoms & Diagnostics" data-info-desc="Evidence-based guidance for fever, stomach ache, migraine, cough, and body pain.">
-              <img src="assets/skin.jpg" alt="Symptoms & Diagnostics">
+            <div class="bento-box square-box clickable-card" data-info-title="Symptoms & Diagnostics" data-info-desc="Evidence-based guidance for common symptoms, fever, stomach pain, migraine, cough, and clinical diagnosis.">
+              <img src="assets/treatment.png" alt="Symptoms & Diagnostics">
               <div class="square-overlay">
                 <h5>Symptoms & Diagnostics</h5>
               </div>
             </div>
-            <div class="bento-box square-box clickable-card" data-info-title="Diseases & Conditions" data-info-desc="Clinical answers for diabetes management, blood pressure control, asthma, and cardiology.">
-              <img src="assets/hero.jpg" alt="Diseases & Conditions">
+            <div class="bento-box square-box clickable-card" data-info-title="Diseases & Conditions" data-info-desc="Clinical answers for chronic disease management, diabetes, blood pressure, asthma, and cardiology.">
+              <img src="assets/lobby.png" alt="Diseases & Conditions">
               <div class="square-overlay">
                 <h5>Diseases & Conditions</h5>
               </div>
@@ -101,7 +101,7 @@
           <div class="bento-box box-p" style="display: flex; justify-content: space-between; align-items: flex-end; position: relative; z-index: 10;">
             <div>
               <p class="text-subtitle" style="margin-bottom: 0.5rem;">MedQuAD Information Retrieval Engine</p>
-              <h2 class="text-huge" style="line-height:1;">Verified<br>Medical<br>Answers</h2>
+              <h2 class="text-huge">Verified<br>Medical<br>Answers</h2>
             </div>
             <a href="/library" class="btn-pill btn-white">Explore Library</a>
           </div>
@@ -115,14 +115,14 @@
             
             <div class="portrait-inner">
               <div class="glass-card clickable-card" data-info-title="The Science of RAG" data-info-desc="HealthNest combines hand-written SMART lnc.ltc TF-IDF, Okapi BM25, and dense embeddings via Reciprocal Rank Fusion (RRF k=60). Every sentence generated by the LLM is verified against source context passages before being presented to the patient.">
-                <h4 style="color: #111;">The Science<br>of RAG</h4>
+                <h4>The Science<br>of RAG</h4>
                 <p>Sentence Verification & Citations</p>
                 <div class="arrow-btn"><i class="fa-solid fa-angle-right"></i></div>
               </div>
               <div class="glass-card clickable-card" style="background: rgba(17,17,17,0.78); color: white; border: 1px solid rgba(255,255,255,0.2);" data-info-title="Selective Abstention" data-info-desc="When document relevance coverage falls below the safety threshold, HealthNest explicitly abstains with 'I don't know based on the provided pages', preventing dangerous medical hallucinations.">
                 <h4 style="color: #fff;">Selective<br>Abstention</h4>
                 <p style="color: #ccc;">Zero Medical Hallucinations</p>
-                <div class="arrow-btn" style="border-color: white;"><i class="fa-solid fa-angle-right"></i></div>
+                <div class="arrow-btn" style="border-color: white; color: white;"><i class="fa-solid fa-angle-right"></i></div>
               </div>
             </div>
           </div>
@@ -133,23 +133,23 @@
 
     <!-- Primary Health Categories Grid -->
     <section id="services" class="services-section container">
-      <h2 class="text-massive reveal" style="font-size: 3rem;">Primary Categories</h2>
+      <h2 class="text-massive reveal" style="font-size: 2.8rem; margin-bottom: 0.5rem;">Primary Categories</h2>
       
       <div class="service-list">
         <div class="s-card reveal clickable-card" style="transition-delay: 0.1s" data-info-title="Symptoms & Clinical Diagnosis" data-info-desc="Evidence-based clinical guidance for common symptoms like fever, severe stomach pain, migraine, cough, and body aches.">
           <h3>Symptoms & Diagnosis</h3>
-          <p>Verified evidence for fever, severe stomach pain, migraine, cough, and body aches.</p>
-          <img src="assets/skin.jpg" alt="Symptoms & Diagnosis">
+          <p>Verified clinical evidence for fever, severe stomach pain, migraine, cough, and body aches.</p>
+          <img src="assets/treatment.png" alt="Symptoms & Diagnosis">
         </div>
         <div class="s-card reveal clickable-card" style="transition-delay: 0.2s" data-info-title="Chronic Diseases & Conditions" data-info-desc="Clinical answers for diabetes management, blood pressure control, asthma, stroke signs, and cardiology.">
           <h3>Diseases & Conditions</h3>
-          <p>Understand diabetes management, blood pressure control, asthma, and cardiovascular health.</p>
-          <img src="assets/hero.jpg" alt="Diseases & Conditions">
+          <p>Understand diabetes management, blood pressure control, asthma, and cardiovascular wellness.</p>
+          <img src="assets/lobby.png" alt="Diseases & Conditions">
         </div>
         <div class="s-card reveal clickable-card" style="transition-delay: 0.3s" data-info-title="Medications & Pharmacotherapy" data-info-desc="Verified Paracetamol dosage rules, antibiotic profiles, administration guidelines, and safety warnings.">
           <h3>Medications & Dosages</h3>
           <p>Explore Paracetamol dosages, antibiotic profiles, side-effect risks, and drug safety.</p>
-          <img src="assets/sleep.jpg" alt="Medications & Dosages">
+          <img src="assets/bento_mask.png" alt="Medications & Dosages">
         </div>
       </div>
     </section>
