@@ -40,54 +40,57 @@ def detect_columns(header: List[str]) -> Dict[str, str]:
     return mapping
 
 
-def load_dataset(csv_path: Path = config.RAW_CSV_PATH) -> Tuple[List[Dict[str, Any]], Dict[str, int]]:
+def load_dataset(data_dir: Path = config.RAW_DATA_DIR) -> Tuple[List[Dict[str, Any]], Dict[str, int]]:
     """
-    Reads CSV using python stdlib 'csv.DictReader'.
+    Reads all CSVs in the raw data directory using python stdlib 'csv.DictReader'.
     Filters out empty rows and detects duplicates by question string.
     
     Returns:
         (records, stats_summary)
     """
-    if not csv_path.exists():
-        logger.warning(f"CSV file not found at {csv_path}. Generating default sample dataset...")
+    if not list(data_dir.glob("*.csv")):
+        csv_path = config.RAW_CSV_PATH
+        logger.warning(f"No CSV files found in {data_dir}. Generating default sample dataset...")
         generate_sample_dataset(csv_path)
 
     records = []
     stats = {"total_rows_read": 0, "valid_records": 0, "empty_rows_dropped": 0, "duplicates_found": 0}
     seen_questions = set()
 
-    with open(csv_path, mode="r", encoding="utf-8", errors="replace") as f:
-        reader = csv.DictReader(f)
-        col_map = detect_columns(reader.fieldnames or [])
-        
-        for idx, row in enumerate(reader):
-            stats["total_rows_read"] += 1
-            question = row.get(col_map.get("question", ""), "").strip()
-            answer = row.get(col_map.get("answer", ""), "").strip()
+    for csv_path in data_dir.glob("*.csv"):
+        logger.info(f"Loading {csv_path}...")
+        with open(csv_path, mode="r", encoding="utf-8", errors="replace") as f:
+            reader = csv.DictReader(f)
+            col_map = detect_columns(reader.fieldnames or [])
+            
+            for idx, row in enumerate(reader):
+                stats["total_rows_read"] += 1
+                question = row.get(col_map.get("question", ""), "").strip()
+                answer = row.get(col_map.get("answer", ""), "").strip()
 
-            if not question or not answer:
-                stats["empty_rows_dropped"] += 1
-                continue
+                if not question or not answer:
+                    stats["empty_rows_dropped"] += 1
+                    continue
 
-            # Deduplication based on exact normalized question text
-            q_norm = question.lower()
-            if q_norm in seen_questions:
-                stats["duplicates_found"] += 1
-                continue
-            seen_questions.add(q_norm)
+                # Deduplication based on exact normalized question text
+                q_norm = question.lower()
+                if q_norm in seen_questions:
+                    stats["duplicates_found"] += 1
+                    continue
+                seen_questions.add(q_norm)
 
-            qa_id = str(row.get(col_map.get("qa_id", ""), f"qa_{idx+1}")).strip()
-            category = row.get(col_map.get("category", ""), "General Health").strip() if col_map.get("category") else "General Health"
-            source = row.get(col_map.get("source", ""), "Medical Q&A Archive").strip() if col_map.get("source") else "Medical Q&A Archive"
+                qa_id = str(row.get(col_map.get("qa_id", ""), f"qa_{len(records)+1}")).strip()
+                category = row.get(col_map.get("category", ""), "General Health").strip() if col_map.get("category") else "General Health"
+                source = row.get(col_map.get("source", ""), csv_path.name).strip() if col_map.get("source") else csv_path.name
 
-            record = {
-                "qa_id": qa_id,
-                "question": question,
-                "answer": answer,
-                "category": category,
-                "source": source
-            }
-            records.append(record)
+                record = {
+                    "qa_id": qa_id,
+                    "question": question,
+                    "answer": answer,
+                    "category": category,
+                    "source": source
+                }
+                records.append(record)
 
     stats["valid_records"] = len(records)
     logger.info(f"Loaded dataset stats: {stats}")
