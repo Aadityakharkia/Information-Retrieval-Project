@@ -3,258 +3,178 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Trustworthy Medical RAG | MedQuAD IR Engine</title>
+  <title>HealthNest — Verifiable Health Q&A System</title>
+  <meta name="description" content="Trustworthy healthcare Q&A system powered by IR principles, dense retrieval, and sentence verification.">
+  
+  <!-- Google Fonts & Font Awesome -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-  <div class="app-container">
-    <!-- Header -->
-    <header class="app-header">
-      <div class="header-left">
-        <div class="logo-mark">IR-RAG</div>
-        <div>
-          <h1>Trustworthy Medical RAG</h1>
-          <p class="subtitle">CSD358 IR Hackathon &bull; Track 1: RAG & Trustworthy Answers &bull; MedQuAD (25,643 Chunks)</p>
-        </div>
-      </div>
-      <div class="header-right">
-        <span class="badge badge-success" id="indexStatusBadge">25,643 Chunks Indexed</span>
-        <span class="badge badge-outline">ISADES 2026 Extension</span>
-      </div>
-    </header>
 
-    <!-- Main Grid -->
-    <main class="main-layout">
-      <!-- Left Column: Controls & Query -->
-      <section class="controls-panel card">
-        <h2 class="card-title">Query & Retrieval Configuration</h2>
+  <!-- Elite Minimalist Preloader -->
+  <div id="loader" class="loader-wrapper">
+    <div class="loader-inner">
+      <div class="loader-logo">HEALTHNEST</div>
+      <div class="loader-bar"><div class="loader-bar-fill"></div></div>
+      <div class="loader-sub">Verifiable Medical Knowledge</div>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="container header-inner">
+      <a href="/" class="logo-block">
+        <span class="logo-main">HEALTHNEST</span>
+        <span class="logo-sub">verifiable health rag</span>
+      </a>
+
+      <nav class="header-nav-links">
+        <a href="/" class="active">Home</a>
+        <a href="/library">Library</a>
+        <a href="/about">About</a>
+      </nav>
+
+      <button id="openMenuBtn" class="btn-pill btn-outline">Menu</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Bento Box Hero Section -->
+    <section class="hero-bento container">
+      <div class="bento-grid">
         
-        <div class="form-group">
-          <label for="queryInput">Medical Question:</label>
-          <div class="input-with-button">
-            <textarea id="queryInput" rows="3" placeholder="Enter clinical or health question (e.g., What are the symptoms of Lymphocytic Choriomeningitis?)..."></textarea>
+        <!-- LEFT COLUMN -->
+        <div class="bento-col-left reveal">
+          <!-- Top Left: Spacious Minimalist Headline & Integrated Search Bar -->
+          <div class="bento-box hero-search-box" style="display: flex; flex-direction: column; justify-content: center; position: relative;">
+            <h1 class="text-massive">Your Health Questions.<br>Real Answers.</h1>
+            <p class="text-subtitle" style="margin-top: 0.8rem; margin-bottom: 1.6rem;">
+              Find the right medical pages. Answer only from verified evidence.
+            </p>
+            
+            <!-- Minimalist Search Bar Container with Live Auto-Suggest -->
+            <div class="bento-search-container">
+              <div class="search-pill-container" id="searchContainer">
+                <svg class="search-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <circle cx="11" cy="11" r="8"/>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input type="text" id="searchInput" class="search-input" placeholder="Ask a health question (e.g. fever, diabetes, dosage)..." autocomplete="off">
+                <button id="btnSearchSubmit" class="btn-search-submit" title="Search">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                    <polyline points="12 5 19 12 12 19"/>
+                  </svg>
+                </button>
+              </div>
+              <!-- Floating Typeahead Auto-Suggest Dropdown -->
+              <div id="suggestDropdown" class="suggest-dropdown"></div>
+            </div>
+
+            <!-- Minimalist Quick Query Chips -->
+            <div class="quick-chips">
+              <span class="chip-label">Try:</span>
+              <button class="chip-btn" data-question="What are common causes and relief methods for headache and migraine?">Headache & Migraine</button>
+              <button class="chip-btn" data-question="What is the recommended dosage for Paracetamol in adults?">Paracetamol Dosage</button>
+              <button class="chip-btn" data-question="What are the early symptoms of diabetes?">Diabetes Symptoms</button>
+              <button class="chip-btn" data-question="Pet me dard aur bukhar ke ilaj kya hai?">Hinglish Query</button>
+            </div>
+
+            <!-- Trust / Architecture Row -->
+            <div class="bento-trust-row">
+              <span><i class="fa-solid fa-check"></i> SMART lnc.ltc TF-IDF</span>
+              <span><i class="fa-solid fa-check"></i> Dense Embeddings (MiniLM)</span>
+              <span><i class="fa-solid fa-check"></i> Verifiable Citations</span>
+              <span><i class="fa-solid fa-check"></i> Selective Abstention</span>
+            </div>
           </div>
           
-          <!-- Example Chips -->
-          <div class="chips-container">
-            <span class="chip-label">Quick Test Queries:</span>
-            <button class="chip" onclick="setQuery('What are the symptoms of Lymphocytic Choriomeningitis?')">LCM Symptoms</button>
-            <button class="chip" onclick="setQuery('What is the treatment for diabetes mellitus?')">Diabetes Treatment</button>
-            <button class="chip" onclick="setQuery('How do I bake chocolate chip cookies?')">OOD Refusal Test</button>
-            <button class="chip" onclick="setQuery('Lymphocytic Choriomeningitis ke kya lakshan aur symptoms hote hai?')">Hinglish Query</button>
-          </div>
-        </div>
-
-        <div class="grid-2-col">
-          <div class="form-group">
-            <label for="retrieverSelect">Retriever Model:</label>
-            <select id="retrieverSelect">
-              <option value="inverted_index">Inverted Index (SMART lnc.ltc + Min-Heap)</option>
-              <option value="bm25">Okapi BM25 (k1=1.5, b=0.75)</option>
-              <option value="dense">Dense Neural (all-MiniLM-L6-v2)</option>
-              <option value="hybrid" selected>Hybrid (Reciprocal Rank Fusion: Sparse + Dense)</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="generatorSelect">Generator LLM:</label>
-            <select id="generatorSelect">
-              <option value="llama-3.3-70b-versatile">Llama 3.3 70B (Groq Cloud)</option>
-              <option value="llama-3.1-8b-instant">Llama 3.1 8B (Groq Fast)</option>
-              <option value="mistral-saba-24b">Mistral Saba (Groq)</option>
-              <option value="mock-offline">Deterministic Offline Fallback</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="grid-2-col">
-          <div class="form-group">
-            <label for="thresholdInput">Refusal Threshold (&tau;):</label>
-            <div class="slider-container">
-              <input type="range" id="thresholdSlider" min="0.0" max="1.0" step="0.01" value="0.015" oninput="updateThresholdValue(this.value)">
-              <span id="thresholdValueText" class="mono-badge">0.015</span>
-            </div>
-            <small class="helper-text">Queries below threshold are refused as untrustworthy.</small>
-          </div>
-
-          <div class="form-group">
-            <label for="topKSelect">Top-K Chunks (Context Window):</label>
-            <select id="topKSelect">
-              <option value="3">Top-3 Chunks</option>
-              <option value="5" selected>Top-5 Chunks (Paper Default)</option>
-              <option value="7">Top-7 Chunks</option>
-            </select>
-          </div>
-        </div>
-
-        <button id="submitQueryBtn" class="btn btn-primary" onclick="submitQuery()">
-          <span id="btnText">Execute RAG & IR Inspection</span>
-          <span id="btnSpinner" class="spinner hidden"></span>
-        </button>
-      </section>
-
-      <!-- Right Column: Answer & Trustworthy Audit -->
-      <section class="results-panel">
-        <!-- Answer Card -->
-        <div class="card answer-card" id="answerCard">
-          <div class="card-header-flex">
-            <h2 class="card-title">Generated Answer</h2>
-            <div id="statusBadgeContainer">
-              <span class="badge badge-neutral" id="answerStatusBadge">Ready</span>
-            </div>
-          </div>
-
-          <!-- Refusal Alert (hidden by default) -->
-          <div id="refusalBanner" class="alert-banner alert-warning hidden">
-            <div class="alert-icon">&excl;</div>
+          <!-- Bottom Left: Wide CTA Card with Generous Breathing Space -->
+          <div class="bento-box hero-cta-box" style="display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 10;">
             <div>
-              <strong>Low Retrieval Confidence &mdash; System Refusal</strong>
-              <p id="refusalReasonText"></p>
+              <p class="text-subtitle" style="margin-bottom: 0.4rem;">MedQuAD Information Retrieval Engine</p>
+              <h2 class="text-huge" style="font-size: 2.1rem; line-height: 1.15;">Verified Medical Knowledge</h2>
+            </div>
+            <a href="/library" class="btn-pill btn-white" style="margin-left: 1.5rem; white-space: nowrap;">Explore Library</a>
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN -->
+        <div class="bento-col-right reveal" style="transition-delay: 0.2s">
+          <!-- Right Side: Bento Hero Portrait with Glass Cards -->
+          <div class="bento-box bento-hero-portrait">
+            <img src="assets/dr_preeti.png" alt="Healthcare Professional" class="hero-bg-img">
+            
+            <div class="portrait-inner">
+              <div class="glass-card clickable-card" data-info-title="The Science of RAG" data-info-desc="HealthNest combines hand-written SMART lnc.ltc TF-IDF, Okapi BM25, and dense embeddings via Reciprocal Rank Fusion (RRF k=60). Every sentence generated by the LLM is verified against source context passages before being presented to the patient.">
+                <h4>The Science<br>of RAG</h4>
+                <p>Sentence Verification & Citations</p>
+                <div class="arrow-btn"><i class="fa-solid fa-angle-right"></i></div>
+              </div>
+              <div class="glass-card clickable-card" style="background: rgba(17,17,17,0.78); color: white; border: 1px solid rgba(255,255,255,0.2);" data-info-title="Selective Abstention" data-info-desc="When document relevance coverage falls below the safety threshold, HealthNest explicitly abstains with 'I don't know based on the provided pages', preventing dangerous medical hallucinations.">
+                <h4 style="color: #fff;">Selective<br>Abstention</h4>
+                <p style="color: #ccc;">Zero Medical Hallucinations</p>
+                <div class="arrow-btn" style="border-color: white; color: white;"><i class="fa-solid fa-angle-right"></i></div>
+              </div>
             </div>
           </div>
-
-          <!-- Answer Body -->
-          <div class="answer-content" id="answerText">
-            <em>Submit a query above to inspect retrieval, answer generation, and sentence citations.</em>
-          </div>
-
-          <!-- Metadata Footer -->
-          <div class="answer-meta" id="answerMetaBar" style="display: none;">
-            <span>Retriever: <strong id="metaRetriever">-</strong></span>
-            <span>Top Score: <strong id="metaScore">-</strong></span>
-            <span>Threshold: <strong id="metaThreshold">-</strong></span>
-            <span>Generator: <strong id="metaModel">-</strong></span>
-          </div>
         </div>
 
-        <!-- Citation Audit Card -->
-        <div class="card audit-card" id="auditCard" style="display: none;">
-          <div class="card-header-flex">
-            <div>
-              <h2 class="card-title">Local Sentence-Level Citation Checker</h2>
-              <p class="subtitle">Independent IR verification using TF-IDF Cosine Similarity & Concept Coverage</p>
-            </div>
-            <div class="faithfulness-pill">
-              <span class="faithfulness-label">Faithfulness:</span>
-              <span class="faithfulness-value" id="faithfulnessScoreText">100%</span>
-            </div>
-          </div>
-
-          <div class="audit-summary-counts">
-            <div class="count-box count-supported">
-              <span class="num" id="countSupported">0</span>
-              <span class="lbl">Supported [C#]</span>
-            </div>
-            <div class="count-box count-partial">
-              <span class="num" id="countPartial">0</span>
-              <span class="lbl">Partially Supported</span>
-            </div>
-            <div class="count-box count-unsupported">
-              <span class="num" id="countUnsupported">0</span>
-              <span class="lbl">Unsupported (Flagged)</span>
-            </div>
-            <div class="count-box count-uncited">
-              <span class="num" id="countUncited">0</span>
-              <span class="lbl">Uncited</span>
-            </div>
-          </div>
-
-          <!-- Sentence-by-Sentence Breakdown -->
-          <div class="sentence-audit-list" id="sentenceAuditList">
-            <!-- Populated via JS -->
-          </div>
-        </div>
-      </section>
-    </main>
-
-    <!-- Deep IR Inspection Section -->
-    <section class="card ir-inspection-section" id="irSection" style="display: none;">
-      <div class="card-header-flex">
-        <div>
-          <h2 class="card-title">Real, Inspectable IR Component Diagnostics</h2>
-          <p class="subtitle">Direct inspection into tokenization, postings lists, SMART lnc.ltc weights, and rankings</p>
-        </div>
-        <div class="tab-buttons">
-          <button class="tab-btn active" onclick="switchTab('tab-weights')">Vector Space (lnc.ltc)</button>
-          <button class="tab-btn" onclick="switchTab('tab-chunks')">Retrieved Chunks & Citations</button>
-          <button class="tab-btn" onclick="switchTab('tab-fusion')">Rank Fusion / Scoring</button>
-        </div>
-      </div>
-
-      <!-- Tab 1: Vector Space Diagnostics -->
-      <div id="tab-weights" class="tab-content active">
-        <div class="diag-meta-grid">
-          <div class="diag-item">
-            <span class="diag-label">Query Tokens:</span>
-            <span class="diag-val mono" id="diagTokens">-</span>
-          </div>
-          <div class="diag-item">
-            <span class="diag-label">Porter Stems:</span>
-            <span class="diag-val mono" id="diagStems">-</span>
-          </div>
-          <div class="diag-item">
-            <span class="diag-label">Query Norm (|q|):</span>
-            <span class="diag-val mono" id="diagNorm">-</span>
-          </div>
-        </div>
-
-        <div class="table-responsive">
-          <table class="ir-table" id="termWeightsTable">
-            <thead>
-              <tr>
-                <th>Stemmed Term</th>
-                <th>Doc Frequency (DF)</th>
-                <th>IDF = ln(N/df)</th>
-                <th>Raw TF</th>
-                <th>Norm LTC Weight</th>
-                <th>Postings Count</th>
-                <th>Inspect Postings Snippet</th>
-              </tr>
-            </thead>
-            <tbody id="termWeightsBody">
-              <!-- Populated via JS -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Tab 2: Retrieved Chunks -->
-      <div id="tab-chunks" class="tab-content">
-        <div class="chunks-list" id="chunksContainer">
-          <!-- Populated via JS -->
-        </div>
-      </div>
-
-      <!-- Tab 3: Rank Fusion / Scoring -->
-      <div id="tab-fusion" class="tab-content">
-        <div id="fusionDiagnosticsContainer">
-          <p class="helper-text">Select Hybrid or BM25 retriever to view detailed score decompositions.</p>
-        </div>
       </div>
     </section>
 
-    <!-- Postings Modal -->
-    <div id="postingsModal" class="modal hidden">
-      <div class="modal-content card">
-        <div class="card-header-flex">
-          <h3 id="modalTermTitle">Postings List for Term</h3>
-          <button class="modal-close" onclick="closePostingsModal()">&times;</button>
+    <!-- Primary Health Categories Grid -->
+    <section id="services" class="services-section container">
+      <h2 class="text-massive reveal" style="font-size: 2.8rem; margin-bottom: 0.5rem;">Primary Categories</h2>
+      
+      <div class="service-list">
+        <div class="s-card reveal clickable-card" style="transition-delay: 0.1s" data-info-title="Symptoms & Clinical Diagnosis" data-info-desc="Evidence-based clinical guidance for common symptoms like fever, severe stomach pain, migraine, cough, and body aches.">
+          <h3>Symptoms & Diagnosis</h3>
+          <p>Verified clinical evidence for fever, severe stomach pain, migraine, cough, and body aches.</p>
+          <img src="assets/treatment.png" alt="Symptoms & Diagnosis">
         </div>
-        <div class="modal-body" id="modalPostingsBody">
-          <!-- Content populated via JS -->
+        <div class="s-card reveal clickable-card" style="transition-delay: 0.2s" data-info-title="Chronic Diseases & Conditions" data-info-desc="Clinical answers for diabetes management, blood pressure control, asthma, stroke signs, and cardiology.">
+          <h3>Diseases & Conditions</h3>
+          <p>Understand diabetes management, blood pressure control, asthma, and cardiovascular wellness.</p>
+          <img src="assets/lobby.png" alt="Diseases & Conditions">
+        </div>
+        <div class="s-card reveal clickable-card" style="transition-delay: 0.3s" data-info-title="Medications & Pharmacotherapy" data-info-desc="Verified Paracetamol dosage rules, antibiotic profiles, administration guidelines, and safety warnings.">
+          <h3>Medications & Dosages</h3>
+          <p>Explore Paracetamol dosages, antibiotic profiles, side-effect risks, and drug safety.</p>
+          <img src="assets/bento_mask.png" alt="Medications & Dosages">
         </div>
       </div>
-    </div>
+    </section>
+  </main>
 
-    <!-- Footer -->
-    <footer class="app-footer">
-      <p>Trustworthy Medical RAG &bull; NIH MedQuAD Dataset &bull; CSD358 IR Hackathon &bull; Built with Porter Stemmer, SMART lnc.ltc, BM25, Dense & RRF</p>
-    </footer>
+  <!-- Fullscreen Menu Overlay -->
+  <div id="menuOverlay" class="menu-overlay">
+    <button id="closeMenuBtn" class="menu-close">&times;</button>
+    <div class="menu-links">
+      <a href="/" class="menu-link-item">Home</a>
+      <a href="/library" class="menu-link-item">Health Library</a>
+      <a href="/about" class="menu-link-item">About IR System</a>
+    </div>
   </div>
 
-  <script src="app.js"></script>
+  <!-- Info Modal Popup -->
+  <div id="infoModal" class="info-modal-overlay">
+    <div class="info-modal-content">
+      <button id="closeInfoModalBtn" class="menu-close" style="top:1.5rem; right:1.5rem;">&times;</button>
+      <h3 id="infoModalTitle" class="info-title">Title</h3>
+      <p id="infoModalDesc" class="info-desc">Description</p>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    <p>HealthNest • Verifiable Medical RAG Engine • NIH MedQuAD Dataset • Built with Porter Stemmer, SMART lnc.ltc, BM25, Dense & RRF</p>
+  </footer>
+
+  <script type="module" src="js/home.js"></script>
 </body>
 </html>

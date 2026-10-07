@@ -1,5 +1,8 @@
 import { fetchLibrary } from "./api.js";
 
+const escapeHtml = (value) =>
+  String(value ?? "").replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+
 document.addEventListener("DOMContentLoaded", () => {
   let currentPage = 1;
   const limit = 12;
@@ -10,61 +13,72 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnNextPage = document.getElementById("btnNextPage");
   const pageIndicator = document.getElementById("pageIndicator");
 
-  btnLibSearch.addEventListener("click", () => {
-    currentPage = 1;
-    loadPage();
-  });
-
-  libSearchInput.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") {
+  if (btnLibSearch) {
+    btnLibSearch.addEventListener("click", () => {
       currentPage = 1;
       loadPage();
-    }
-  });
+    });
+  }
 
-  btnPrevPage.addEventListener("click", () => {
-    if (currentPage > 1) {
-      currentPage--;
+  if (libSearchInput) {
+    libSearchInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        currentPage = 1;
+        loadPage();
+      }
+    });
+  }
+
+  if (btnPrevPage) {
+    btnPrevPage.addEventListener("click", () => {
+      if (currentPage > 1) {
+        currentPage--;
+        loadPage();
+      }
+    });
+  }
+
+  if (btnNextPage) {
+    btnNextPage.addEventListener("click", () => {
+      currentPage++;
       loadPage();
-    }
-  });
-
-  btnNextPage.addEventListener("click", () => {
-    currentPage++;
-    loadPage();
-  });
+    });
+  }
 
   async function loadPage() {
-    libraryGrid.innerHTML = "<p>Loading document chunks...</p>";
+    libraryGrid.innerHTML = "<p style='color: #666;'>Loading document chunks...</p>";
     try {
       const data = await fetchLibrary({
         page: currentPage,
         limit: limit,
-        search: libSearchInput.value.trim()
+        search: libSearchInput ? libSearchInput.value.trim() : ""
       });
 
-      pageIndicator.textContent = `Page ${data.page} of ${data.total_pages}`;
+      if (pageIndicator) {
+        pageIndicator.textContent = `Page ${data.page} of ${data.total_pages || 1}`;
+      }
       libraryGrid.innerHTML = "";
 
       if (!data.chunks || data.chunks.length === 0) {
-        libraryGrid.innerHTML = "<p>No Q&A document chunks matched your filter.</p>";
+        libraryGrid.innerHTML = "<p style='color: #666;'>No Q&A document chunks matched your search.</p>";
         return;
       }
 
-      data.chunks.forEach((chunk) => {
+      data.chunks.forEach((chunk, idx) => {
         const card = document.createElement("div");
-        card.className = "source-card";
+        card.className = "library-card stagger-item";
+        card.style.animationDelay = `${(idx * 0.04).toFixed(2)}s`;
         card.innerHTML = `
-          <div style="font-size: 12px; color: var(--primary-purple); font-weight: 800; margin-bottom: 6px;">
-            CHUNK ID: ${chunk.chunk_id} | QA ID: ${chunk.qa_id}
+          <div>
+            <div class="library-card-id">Chunk #${escapeHtml(chunk.chunk_id)} • Doc #${escapeHtml(chunk.qa_id)}</div>
+            <h4>${escapeHtml(chunk.question)}</h4>
+            <p>${escapeHtml(chunk.text)}</p>
           </div>
-          <h4 style="margin-bottom: 8px; font-size: 16px;">${chunk.question}</h4>
-          <p style="font-size: 14px; color: #4a5568;">${chunk.text}</p>
         `;
         libraryGrid.appendChild(card);
       });
     } catch (err) {
-      libraryGrid.innerHTML = `<p style="color:red;">Error: ${err.message}</p>`;
+      libraryGrid.innerHTML = `<p style="color:#c53030; font-weight:600;">Error: ${escapeHtml(err.message)}</p>`;
     }
   }
 

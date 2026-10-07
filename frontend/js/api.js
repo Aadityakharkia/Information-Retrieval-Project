@@ -3,7 +3,9 @@
  * Encapsulates fetch calls to Flask backend endpoints.
  */
 
-const API_BASE = "";
+const API_BASE = (typeof window !== "undefined" && (window.location.protocol === "file:" || (window.location.hostname !== "127.0.0.1" && window.location.hostname !== "localhost")))
+  ? "http://127.0.0.1:5000"
+  : "";
 
 export async function askQuestion(payload) {
   const response = await fetch(`${API_BASE}/api/ask`, {

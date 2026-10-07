@@ -109,8 +109,20 @@ class InvertedIndex:
 
     @classmethod
     def load(cls, filepath: Path = config.INDEX_CACHE_PATH) -> "InvertedIndex":
-        """Loads inverted index from disk via pickle."""
+        """Loads inverted index from disk via pickle, handling both object and dict formats."""
         with open(filepath, "rb") as f:
             idx = pickle.load(f)
+        if isinstance(idx, dict):
+            obj = cls()
+            obj.postings = idx.get("postings", {})
+            obj.zone_postings = idx.get("zone_postings", {})
+            obj.df = idx.get("df", {})
+            obj.idf = idx.get("idf", {})
+            obj.doc_norms = idx.get("doc_norms", {})
+            obj.champion_lists = idx.get("champion_lists", {})
+            obj.chunks = idx.get("chunks", [])
+            obj.N = idx.get("N", len(obj.chunks))
+            logger.info(f"Loaded InvertedIndex from dict cache with N={obj.N} chunks from {filepath}")
+            return obj
         logger.info(f"Loaded InvertedIndex with N={idx.N} chunks from {filepath}")
         return idx

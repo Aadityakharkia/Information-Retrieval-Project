@@ -1,220 +1,163 @@
 """
 backend/app.py
-Flask API Web Server for HealthNest.
-Serves REST API routes for retrieval, RAG QA, library browsing, model selection,
-and evaluation summaries. Serves frontend static files directly from 'frontend/' directory.
+Flask server for HealthNest: REST API + static frontend on one origin.
 
-Lecture Concepts: Web IR Interface, REST API for RAG, End-to-End Pipeline Service.
+Run:  python -m backend.app        (http://127.0.0.1:5000)
+
+Endpoints
+  POST /api/ask           full RAG answer (retrieve -> abstain? -> generate -> verify)
+  GET  /api/suggest?q=    type-ahead suggestions
+  GET  /api/search?q=     retrieval-only results
+  GET  /api/library       paginated corpus browser
+  GET  /api/models        selectable LLM models
+  GET  /api/eval/summary  retrieval benchmark report card
+  GET  /api/health        liveness + index status
 """
 
-import sys
 import json
 import logging
-from pathlib import Path
-from flask import Flask, request, jsonify, send_from_directory
+import math
+import os
 
-# Add project root to path
-sys.path.insert(0, str(Path(__file__).parent.parent.resolve()))
+from flask import Flask, jsonify, request, send_from_directory
 
 import config
-from backend.pipeline import ask, HealthNestPipeline
-from backend.data.loader import load_dataset
+from backend.pipeline import RETRIEVER_TYPES, get_pipeline
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
 
-# Static frontend folder
 FRONTEND_DIR = config.BASE_DIR / "frontend"
+PAGES = {"": "index.html", "answer": "answer.html", "library": "library.html", "about": "about.html"}
 
 app = Flask(__name__, static_folder=str(FRONTEND_DIR), static_url_path="")
-pipeline_instance = HealthNestPipeline()
+pipeline = get_pipeline()
 
 
-# -----------------------------------------------------------------------------
-# Static Frontend Serving Routes
-# -----------------------------------------------------------------------------
-@app.route("/")
-def serve_index():
-    return send_from_directory(FRONTEND_DIR, "index.html")
-
-@app.route("/answer")
-@app.route("/answer.html")
-def serve_answer():
-    return send_from_directory(FRONTEND_DIR, "answer.html")
-
-@app.route("/library")
-def serve_library():
-    return send_from_directory(FRONTEND_DIR, "library.html")
-
-@app.route("/about")
-def serve_about():
-    return send_from_directory(FRONTEND_DIR, "about.html")
-
-
-# -----------------------------------------------------------------------------
-# REST API Endpoints
-# -----------------------------------------------------------------------------
-@app.route("/api/ask", methods=["POST"])
-def api_ask():
-    """
-    Main RAG Q&A Endpoint.
-    Body JSON:
-      {
-        "question": str,
-        "retriever": "sparse"|"dense"|"hybrid"|"bm25",
-        "top_k": int,
-        "model": str,
-        "enable_abstain": bool,
-        "enable_checker": bool,
-        "use_champion_lists": bool
-      }
-    """
-    data = request.get_json() or {}
-    question = data.get("question", "").strip()
-    if not question:
-        return jsonify({"error": "Question parameter is required"}), 400
-
-    retriever = data.get("retriever", "hybrid")
-    top_k = int(data.get("top_k", 5))
-    model = data.get("model", config.DEFAULT_MODEL)
-    enable_abstain = bool(data.get("enable_abstain", True))
-    enable_checker = bool(data.get("enable_checker", True))
-    use_champion_lists = bool(data.get("use_champion_lists", False))
-
+def _int_arg(value, default, lo, hi):
     try:
-        result = pipeline_instance.ask(
+        return max(lo, min(int(value), hi))
+    except (TypeError, ValueError):
+        return default
+
+
+def _error(message, status=400):
+    return jsonify({"error": message}), status
+
+
+# ----------------------------------------------------------------------------
+# Frontend pages (also reachable as /answer.html etc. through the static folder)
+# ----------------------------------------------------------------------------
+@app.route("/", defaults={"page": ""})
+@app.route("/<any(answer, library, about):page>")
+def serve_page(page):
+    return send_from_directory(FRONTEND_DIR, PAGES[page])
+
+
+# ----------------------------------------------------------------------------
+# API
+# ----------------------------------------------------------------------------
+@app.post("/api/ask")
+def api_ask():
+    data = request.get_json(silent=True) or {}
+    question = (data.get("question") or "").strip()
+    if not question:
+        return _error("Field 'question' is required.")
+    if len(question) > 500:
+        return _error("Question is too long (max 500 characters).")
+
+    retriever = data.get("retriever") or "hybrid"
+    if retriever not in RETRIEVER_TYPES:
+        return _error(f"Unknown retriever '{retriever}'. Choose from {list(RETRIEVER_TYPES)}.")
+
+    model = data.get("model") or config.DEFAULT_MODEL
+    try:
+        result = pipeline.ask(
             question=question,
             retriever_type=retriever,
-            top_k=top_k,
+            top_k=_int_arg(data.get("top_k"), 5, 1, 10),
             model=model,
-            enable_abstain=enable_abstain,
-            enable_checker=enable_checker,
-            use_champion_lists=use_champion_lists
+            enable_abstain=bool(data.get("enable_abstain", True)),
+            enable_checker=bool(data.get("enable_checker", True)),
+            use_champion_lists=bool(data.get("use_champion_lists", False)),
         )
         return jsonify(result)
-    except Exception as e:
-        logger.exception(f"Error processing /api/ask: {e}")
-        return jsonify({"error": str(e)}), 500
+    except Exception:
+        logger.exception("/api/ask failed")
+        return _error("Internal error while answering the question.", 500)
 
 
-@app.route("/api/suggest", methods=["GET"])
+@app.get("/api/suggest")
 def api_suggest():
-    """IR Auto-Suggest Endpoint based on Inverted Index Dictionary & Questions."""
     q = request.args.get("q", "").strip()
-    limit = int(request.args.get("limit", 6))
     if not q:
         return jsonify({"prefix": "", "suggestions": []})
-
-    from backend.pipeline import suggest
-    results = suggest(q, limit=limit)
-    return jsonify({"prefix": q, "suggestions": results})
+    limit = _int_arg(request.args.get("limit"), 6, 1, 20)
+    return jsonify({"prefix": q, "suggestions": pipeline.suggest_queries(q, limit=limit)})
 
 
-@app.route("/api/search", methods=["GET"])
+@app.get("/api/search")
 def api_search():
-    """Retrieval-only Search Endpoint (no LLM generation)."""
     q = request.args.get("q", "").strip()
     if not q:
-        return jsonify({"error": "Query parameter 'q' is required"}), 400
-
+        return _error("Query parameter 'q' is required.")
     retriever = request.args.get("retriever", "hybrid")
-    top_k = int(request.args.get("top_k", 5))
-
-    pipeline_instance.initialize()
-    
-    if retriever == "sparse":
-        from backend.ir.tfidf import TfIdfRetriever
-        r = TfIdfRetriever(pipeline_instance.index)
-        results = r.search(q, top_k=top_k)
-    elif retriever == "bm25":
-        from backend.ir.bm25 import BM25Retriever
-        r = BM25Retriever(pipeline_instance.index)
-        results = r.search(q, top_k=top_k)
-    elif retriever == "dense":
-        results = pipeline_instance.dense_retriever.search(q, top_k=top_k)
-    else:
-        from backend.ir.tfidf import TfIdfRetriever
-        from backend.ir.hybrid import HybridRetriever
-        sparse_res = TfIdfRetriever(pipeline_instance.index).search(q, top_k=top_k*2)
-        dense_res = pipeline_instance.dense_retriever.search(q, top_k=top_k*2)
-        results = HybridRetriever().fuse(sparse_res, dense_res, top_k=top_k)
-
+    if retriever not in RETRIEVER_TYPES:
+        return _error(f"Unknown retriever '{retriever}'. Choose from {list(RETRIEVER_TYPES)}.")
+    results = pipeline.search(q, retriever_type=retriever, top_k=_int_arg(request.args.get("top_k"), 5, 1, 10))
     return jsonify({"query": q, "count": len(results), "results": results})
 
 
-@app.route("/api/library", methods=["GET"])
+@app.get("/api/library")
 def api_library():
-    """Browse, filter, and paginate dataset Q&A chunks."""
-    pipeline_instance.initialize()
-    page = int(request.args.get("page", 1))
-    limit = int(request.args.get("limit", 12))
-    category = request.args.get("category", "").strip().lower()
+    pipeline.initialize()
+    page = _int_arg(request.args.get("page"), 1, 1, 10**6)
+    limit = _int_arg(request.args.get("limit"), 12, 1, 50)
     search = request.args.get("search", "").strip().lower()
 
-    chunks = pipeline_instance.chunks
-
-    filtered = []
-    for c in chunks:
-        q_text = c.get("question", "")
-        body_text = c.get("text", "")
-        # Filter by search term if provided
-        if search and (search not in q_text.lower() and search not in body_text.lower()):
-            continue
-        filtered.append(c)
-
-    total_records = len(filtered)
-    start_idx = (page - 1) * limit
-    end_idx = start_idx + limit
-    page_chunks = filtered[start_idx:end_idx]
-
+    chunks = [
+        c for c in pipeline.chunks
+        if not search or search in c.get("question", "").lower() or search in c.get("text", "").lower()
+    ]
+    start = (page - 1) * limit
     return jsonify({
         "page": page,
         "limit": limit,
-        "total_records": total_records,
-        "total_pages": math.ceil(total_records / float(limit)) if limit > 0 else 1,
-        "chunks": page_chunks
+        "total_records": len(chunks),
+        "total_pages": max(1, math.ceil(len(chunks) / limit)),
+        "chunks": chunks[start:start + limit],
     })
 
 
-@app.route("/api/models", methods=["GET"])
+@app.get("/api/models")
 def api_models():
-    """Returns list of supported LLM models."""
-    return jsonify({
-        "models": config.AVAILABLE_MODELS,
-        "default": config.DEFAULT_MODEL
-    })
+    return jsonify({"models": config.AVAILABLE_MODELS, "default": config.DEFAULT_MODEL})
 
 
-@app.route("/api/eval/summary", methods=["GET"])
+@app.get("/api/eval/summary")
 def api_eval_summary():
-    """Serves report-card evaluation summary JSON."""
     summary_path = config.EVAL_RESULTS_DIR / "eval_summary.json"
     if summary_path.exists():
         with open(summary_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        return jsonify(data)
-    
-    # Return placeholder summary if eval scripts haven't run yet
-    return jsonify({
-        "status": "pending",
-        "message": "Evaluation script results are generating or pending."
-    })
+            return jsonify(json.load(f))
+    return jsonify({"status": "pending", "message": "Run `make eval` to generate the report card."})
 
 
-@app.route("/api/health", methods=["GET"])
+@app.get("/api/health")
 def api_health():
-    """Health status endpoint."""
-    pipeline_instance.initialize()
+    pipeline.initialize()
     return jsonify({
         "status": "ok",
-        "chunks_count": len(pipeline_instance.chunks),
-        "index_loaded": pipeline_instance.index is not None,
-        "dense_loaded": pipeline_instance.dense_retriever.embeddings is not None
+        "chunks_count": len(pipeline.chunks),
+        "index_loaded": pipeline.index is not None,
+        "dense_loaded": pipeline.dense_retriever is not None and pipeline.dense_retriever.embeddings is not None,
+        "default_model": config.DEFAULT_MODEL,
+        "groq_configured": bool(config.GROQ_API_KEY),
     })
 
 
-import math
-
 if __name__ == "__main__":
-    logger.info("Starting HealthNest Flask Server on http://127.0.0.1:5000")
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    pipeline.initialize()  # warm indexes before serving the first request
+    port = int(os.getenv("PORT", "5000"))
+    logger.info("HealthNest running on http://127.0.0.1:%d", port)
+    app.run(host="127.0.0.1", port=port, debug=False)

@@ -16,14 +16,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // Render report card tables
     let html = `
-      <table style="width:100%; border-collapse:collapse; margin-bottom:24px;">
+      <table class="eval-table">
         <thead>
-          <tr style="background:#f7fafc; border-bottom:2px solid #e2e8f0; text-align:left;">
-            <th style="padding:10px;">Retriever</th>
-            <th style="padding:10px;">P@1</th>
-            <th style="padding:10px;">P@5</th>
-            <th style="padding:10px;">Recall@5</th>
-            <th style="padding:10px;">MRR</th>
+          <tr>
+            <th>Retriever Model</th>
+            <th>Precision@1</th>
+            <th>Precision@5</th>
+            <th>Recall@5</th>
+            <th>MRR</th>
           </tr>
         </thead>
         <tbody>

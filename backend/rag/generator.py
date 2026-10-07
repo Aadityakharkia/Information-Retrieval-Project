@@ -68,14 +68,17 @@ def generate_answer(
         }
     """
     messages = format_rag_prompt(question, top_chunks)
-    raw_response = generate_llm_response(messages, model=model)
+    raw_response, provider = generate_llm_response(messages, model=model)
+    # Some models emit full-width brackets (e.g. 【1】); normalise to [1].
+    raw_response = re.sub(r"[【\[]\s*(\d+(?:\s*,\s*\d+)*)\s*[】\]]", r"[\1]", raw_response)
 
     if "don't know based on the provided pages" in raw_response.lower():
         return {
             "raw_answer": "I don't know based on the provided pages.",
             "sentences": [],
             "has_uncited": False,
-            "has_invalid_citations": False
+            "has_invalid_citations": False,
+            "provider": provider
         }
 
     raw_sentences = split_into_sentences(raw_response)
@@ -106,5 +109,6 @@ def generate_answer(
         "raw_answer": raw_response,
         "sentences": parsed_sentences,
         "has_uncited": has_uncited,
-        "has_invalid_citations": has_invalid_citations
+        "has_invalid_citations": has_invalid_citations,
+        "provider": provider
     }

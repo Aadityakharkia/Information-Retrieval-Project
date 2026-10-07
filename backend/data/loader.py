@@ -40,61 +40,64 @@ def detect_columns(header: List[str]) -> Dict[str, str]:
     return mapping
 
 
-def load_dataset(csv_path: Path = config.RAW_CSV_PATH) -> Tuple[List[Dict[str, Any]], Dict[str, int]]:
+def load_dataset(data_dir: Path = config.RAW_DATA_DIR) -> Tuple[List[Dict[str, Any]], Dict[str, int]]:
     """
-    Reads CSV using python stdlib 'csv.DictReader'.
+    Reads all CSVs in the raw data directory using python stdlib 'csv.DictReader'.
     Filters out empty rows and detects duplicates by question string.
     
     Returns:
         (records, stats_summary)
     """
-    if not csv_path.exists():
-        logger.warning(f"CSV file not found at {csv_path}. Generating default sample dataset...")
+    if not list(data_dir.glob("*.csv")):
+        csv_path = config.RAW_CSV_PATH
+        logger.warning(f"No CSV files found in {data_dir}. Generating default sample dataset...")
         generate_sample_dataset(csv_path)
 
     records = []
     stats = {"total_rows_read": 0, "valid_records": 0, "empty_rows_dropped": 0, "duplicates_found": 0}
     seen_questions = set()
 
-    with open(csv_path, mode="r", encoding="utf-8", errors="replace") as f:
-        reader = csv.DictReader(f)
-        col_map = detect_columns(reader.fieldnames or [])
-        
-        for idx, row in enumerate(reader):
-            stats["total_rows_read"] += 1
-            question = row.get(col_map.get("question", ""), "").strip()
-            answer = row.get(col_map.get("answer", ""), "").strip()
+    for csv_path in data_dir.glob("*.csv"):
+        logger.info(f"Loading {csv_path}...")
+        with open(csv_path, mode="r", encoding="utf-8", errors="replace") as f:
+            reader = csv.DictReader(f)
+            col_map = detect_columns(reader.fieldnames or [])
+            
+            for idx, row in enumerate(reader):
+                stats["total_rows_read"] += 1
+                question = row.get(col_map.get("question", ""), "").strip()
+                answer = row.get(col_map.get("answer", ""), "").strip()
 
-            if not question or not answer:
-                stats["empty_rows_dropped"] += 1
-                continue
+                if not question or not answer:
+                    stats["empty_rows_dropped"] += 1
+                    continue
 
-            # Deduplication based on exact normalized question text
-            q_norm = question.lower()
-            if q_norm in seen_questions:
-                stats["duplicates_found"] += 1
-                continue
-            seen_questions.add(q_norm)
+                # Deduplication based on exact normalized question text
+                q_norm = question.lower()
+                if q_norm in seen_questions:
+                    stats["duplicates_found"] += 1
+                    continue
+                seen_questions.add(q_norm)
 
-            qa_id = str(row.get(col_map.get("qa_id", ""), f"qa_{idx+1}")).strip()
-            category = row.get(col_map.get("category", ""), "General Health").strip() if col_map.get("category") else "General Health"
-            source = row.get(col_map.get("source", ""), "Medical Q&A Archive").strip() if col_map.get("source") else "Medical Q&A Archive"
+                qa_id = str(row.get(col_map.get("qa_id", ""), f"qa_{len(records)+1}")).strip()
+                category = row.get(col_map.get("category", ""), "General Health").strip() if col_map.get("category") else "General Health"
+                source = row.get(col_map.get("source", ""), csv_path.name).strip() if col_map.get("source") else csv_path.name
 
-            record = {
-                "qa_id": qa_id,
-                "question": question,
-                "answer": answer,
-                "category": category,
-                "source": source
-            }
-            records.append(record)
+                record = {
+                    "qa_id": qa_id,
+                    "question": question,
+                    "answer": answer,
+                    "category": category,
+                    "source": source
+                }
+                records.append(record)
 
     stats["valid_records"] = len(records)
     logger.info(f"Loaded dataset stats: {stats}")
     return records, stats
 
 
-def generate_sample_dataset(target_path: Path, num_records: int = 500) -> None:
+def generate_sample_dataset(target_path: Path) -> None:
     """
     Generates a rich, realistic health Q&A CSV dataset for testing & demonstration
     if no raw Kaggle CSV is present locally.
@@ -107,6 +110,15 @@ def generate_sample_dataset(target_path: Path, num_records: int = 500) -> None:
     ]
     
     base_templates = [
+        ("What are common causes and relief methods for headache and migraine?",
+         "Headache relief and causes involve distinguishing between tension headaches, migraines, cluster headaches, and sinus pressure. Tension headaches are frequently triggered by stress, dehydration, eye strain, lack of sleep, or poor cervical posture. Migraines present as pulsating, throbbing pain often accompanied by nausea, aura, and photophobia (sensitivity to light and sound). Effective headache relief methods include resting in a quiet, dark room, applying a cold ice pack to the temples or forehead, drinking plenty of water for rehydration, and gentle neck massage. Over-the-counter pain relievers such as Paracetamol (Acetaminophen) or NSAIDs like Ibuprofen provide rapid symptomatic relief when taken early. Chronic or severe migraines may require prescription triptans (such as Sumatriptan) and avoiding dietary triggers like caffeine withdrawal, aged cheeses, or artificial sweeteners.",
+         "Neurology"),
+        ("How to get quick relief from severe headache and sir dard?",
+         "Immediate relief from severe headache and sir dard involves non-pharmacological interventions combined with targeted analgesic therapy. Rest in a dark, quiet room with minimal sensory stimulation. Apply a cold compress to the forehead or temples to constrict dilated blood vessels, or use a warm compress on the neck muscles if the headache is tension-related. Hydrate immediately with electrolyte-rich water. Over-the-counter analgesics such as Ibuprofen (400 mg) or Paracetamol (500-1000 mg) can alleviate acute pain. Avoid alcohol, nicotine, and excessive screen time. If a headache is sudden, explosive (thunderclap), or accompanied by neck stiffness, high fever, or neurological weakness, seek emergency medical care immediately.",
+         "Neurology"),
+        ("What are the warning signs and home remedies for tension headaches?",
+         "Tension headaches produce a dull, aching band-like pressure across both sides of the forehead and the base of the skull. Common causes include mental stress, prolonged computer or smartphone screen use, fatigue, and jaw clenching. Home remedies include practicing progressive muscle relaxation, taking 15-minute breaks every hour of desk work, applying peppermint oil or a warm compress to the back of the neck, and maintaining adequate hydration. Over-the-counter analgesics like Aspirin or Acetaminophen can be used intermittently. Regular physical exercise and consistent sleep schedules prevent recurrent episodes.",
+         "Neurology"),
         ("What are the early symptoms of diabetes?", 
          "Early symptoms of diabetes include increased thirst (polydipsia), frequent urination (polyuria), extreme hunger, weight loss, fatigue, blurred vision, and slow-healing sores. Blood sugar levels should be tested if these occur.",
          "Cardiology"),
@@ -151,25 +163,50 @@ def generate_sample_dataset(target_path: Path, num_records: int = 500) -> None:
          "Cardiology"),
         ("What are the symptoms and home treatment for acidity and heartburn?",
          "Heartburn presents as a burning sensation in the chest caused by stomach acid regurgitating into the esophagus. Home relief includes over-the-counter antacids, avoiding lying down immediately after meals, and elevating the head of your bed.",
-         "Gastroenterology")
+         "Gastroenterology"),
+        ("What are the best home remedies for viral fever and high body temperature?",
+         "Viral fever management includes rest, continuous hydration with water, soups, and ORS solutions, lukewarm water sponge baths to bring down body temperature, and Paracetamol (500-650 mg) for temperature control. Avoid self-medicating with antibiotics since viral infections do not respond to antibacterial drugs. Seek emergency care if temperature exceeds 103°F (39.4°C) or is accompanied by confusion.",
+         "General Health"),
+        ("What are effective treatments for dry cough and sore throat?",
+         "Effective relief for dry cough and sore throat includes warm salt water gargles 3-4 times daily, drinking herbal tea with honey and ginger, using steam inhalation, and taking throat lozenges. Over-the-counter cough suppressants such as Dextromethorphan help reduce nighttime coughing. If a cough persists for more than 3 weeks or involves blood, immediate clinical evaluation is needed.",
+         "General Health"),
+        ("How to treat common cold, runny nose, and sinus congestion?",
+         "Common cold treatment focuses on symptomatic relief: staying well-hydrated, inhaling eucalyptus steam to clear congested nasal passages, using saline nasal sprays, and taking antihistamines like Cetirizine for runny nose and sneezing. Decongestant nasal sprays should not be used for more than 3 consecutive days to avoid rebound congestion.",
+         "General Health"),
+        ("What are the causes and home remedies for lower back pain?",
+         "Lower back pain is commonly caused by lumbar muscle strain, ligament sprain, poor ergonomics, prolonged sitting, or lumbar disc herniation. Immediate home care includes applying ice packs during the first 48 hours followed by heat therapy, gentle pelvic tilts, walking, and short-term use of NSAIDs like Ibuprofen. Avoid prolonged bed rest as gentle movement accelerates recovery.",
+         "General Health"),
+        ("How to manage acute diarrhea, loose motions, and dehydration?",
+         "The primary treatment for acute diarrhea and loose motions is rapid rehydration with Oral Rehydration Salts (ORS) solution to replace lost electrolytes and fluids. Eat bland foods adhering to the BRAT diet (bananas, rice, applesauce, toast), and consider zinc supplementation and probiotics to restore gut flora. Avoid dairy, high-fat foods, and caffeinated beverages until symptoms resolve.",
+         "Gastroenterology"),
+        ("What causes acute anxiety and panic attacks, and how to calm down?",
+         "Panic attacks and acute anxiety are characterized by rapid heartbeat (palpitations), trembling, shortness of breath, dizziness, and intense fear. Calming techniques include the 4-7-8 breathing method (inhale for 4 seconds, hold for 7, exhale for 8), the 5-4-3-2-1 sensory grounding exercise, splashing cold water on the face to activate the mammalian dive reflex, and reminding oneself that the physical sensation is temporary and harmless.",
+         "Lifestyle"),
+        ("What are the symptoms and prevention tips for kidney stones?",
+         "Kidney stones produce sharp, severe cramping pain in the back and flank that radiates to the lower abdomen and groin, often accompanied by pink or cloudy urine and nausea. Prevention relies on drinking at least 2.5 to 3 liters of water daily to dilute stone-forming minerals, reducing dietary sodium, and moderating animal protein and oxalate-rich foods.",
+         "General Health"),
+        ("How does Cetirizine work for allergic reactions and skin itching?",
+         "Cetirizine is a second-generation antihistamine that selectively blocks peripheral H1 histamine receptors, preventing symptoms such as sneezing, runny nose, itchy watery eyes, and urticaria (hives). It is usually taken as a single 10 mg dose daily and has a lower sedative profile compared to first-generation antihistamines like Diphenhydramine.",
+         "Medications"),
+        ("How to prevent digital eye strain and computer vision syndrome?",
+         "Digital eye strain is prevented by following the 20-20-20 rule: every 20 minutes look at an object at least 20 feet away for at least 20 seconds. Ensure appropriate ambient lighting without screen glare, position the monitor about 20 to 28 inches from the eyes slightly below eye level, blink consciously to lubricate the cornea, and use preservative-free artificial tear drops if dryness occurs.",
+         "Lifestyle")
     ]
     
-    rows = []
-    for i in range(1, num_records + 1):
-        tpl = base_templates[(i - 1) % len(base_templates)]
-        q_var = f"{tpl[0]}" if i <= len(base_templates) else f"{tpl[0]} (Case #{i})"
-        a_var = f"{tpl[1]} Reference document #{i} for medical inquiry."
-        rows.append({
-            "qa_id": f"qa_{i:05d}",
-            "question": q_var,
-            "answer": a_var,
-            "category": tpl[2],
-            "source": f"Medical Journal #{100 + (i % 50)}"
-        })
+    rows = [
+        {
+            "qa_id": f"qa_{idx:05d}",
+            "question": question,
+            "answer": answer,
+            "category": category,
+            "source": "HealthNest Curated Q&A"
+        }
+        for idx, (question, answer, category) in enumerate(base_templates, start=1)
+    ]
 
     with open(target_path, "w", encoding="utf-8", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=["qa_id", "question", "answer", "category", "source"])
         writer.writeheader()
         writer.writerows(rows)
 
-    logger.info(f"Generated sample dataset with {num_records} Q&A records at {target_path}")
+    logger.info(f"Generated sample dataset with {len(rows)} diverse Q&A records at {target_path}")
