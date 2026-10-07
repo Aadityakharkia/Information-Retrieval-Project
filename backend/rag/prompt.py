@@ -24,7 +24,11 @@ STRICT GENERATION RULES:
 """
 
 
-def format_rag_prompt(question: str, top_chunks: List[Dict[str, Any]]) -> List[Dict[str, str]]:
+def format_rag_prompt(
+    question: str,
+    top_chunks: List[Dict[str, Any]],
+    added_terms: List[str] = None
+) -> List[Dict[str, str]]:
     """
     Formats system prompt and user context message for LLM chat API.
     """
@@ -40,10 +44,11 @@ def format_rag_prompt(question: str, top_chunks: List[Dict[str, Any]]) -> List[D
         )
 
     context_text = "\n".join(context_str_parts)
+    concept_hint = f" (Focus concepts: {', '.join(added_terms)})" if added_terms else ""
 
     user_content = (
         f"Context Pages:\n{context_text}\n\n"
-        f"User Health Question: {question}\n\n"
+        f"User Health Question: {question}{concept_hint}\n\n"
         f"Instructions: Write a concise, factual answer where EVERY sentence ends with a citation [n]. "
         f"If context is insufficient, output EXACTLY 'I don't know based on the provided pages.'"
     )

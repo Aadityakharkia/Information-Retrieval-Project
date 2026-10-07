@@ -54,7 +54,8 @@ def parse_citations(sentence_text: str, max_k: int = 5) -> Tuple[str, List[int],
 def generate_answer(
     question: str,
     top_chunks: List[Dict[str, Any]],
-    model: str = config.DEFAULT_MODEL
+    model: str = config.DEFAULT_MODEL,
+    added_terms: List[str] = None
 ) -> Dict[str, Any]:
     """
     Executes grounded RAG generation using LLM.
@@ -67,7 +68,7 @@ def generate_answer(
             "has_invalid_citations": bool
         }
     """
-    messages = format_rag_prompt(question, top_chunks)
+    messages = format_rag_prompt(question, top_chunks, added_terms=added_terms)
     raw_response, provider = generate_llm_response(messages, model=model)
     # Some models emit full-width brackets (e.g. 【1】); normalise to [1].
     raw_response = re.sub(r"[【\[]\s*(\d+(?:\s*,\s*\d+)*)\s*[】\]]", r"[\1]", raw_response)

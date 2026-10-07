@@ -112,6 +112,7 @@ class HealthNestPipeline:
         t0 = time.time()
         lang = detect_language(question)
         expanded_q, added_terms = self.hinglish_expander.expand_query(question)
+        concept_groups = self.hinglish_expander.get_concept_groups(question)
         timings["preproc_ms"] = round((time.time() - t0) * 1000, 2)
 
         # Step 3: Retrieval
@@ -173,7 +174,7 @@ class HealthNestPipeline:
 
         # Step 4: Abstention Check
         t0 = time.time()
-        abstain_decision = evaluate_abstention(expanded_q, retrieval_results)
+        abstain_decision = evaluate_abstention(question, retrieval_results, added_terms=added_terms, concept_groups=concept_groups)
         timings["abstain_ms"] = round((time.time() - t0) * 1000, 2)
 
         if enable_abstain and abstain_decision["should_abstain"]:
@@ -198,7 +199,7 @@ class HealthNestPipeline:
 
         # Step 5: Answer Generation
         t0 = time.time()
-        gen_result = generate_answer(question, retrieval_results, model=model)
+        gen_result = generate_answer(question, retrieval_results, model=model, added_terms=added_terms)
         timings["generation_ms"] = round((time.time() - t0) * 1000, 2)
 
         # Check if LLM output answered "I don't know"

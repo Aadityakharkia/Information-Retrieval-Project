@@ -105,7 +105,11 @@ def generate_mock_rag_answer(messages: List[Dict[str, str]]) -> str:
     if not q_match:
         q_match = re.search(r"Question:\s*(.+?)(?:\nAnswer:|$)", user_msg, re.DOTALL)
     question_text = q_match.group(1).strip() if q_match else ""
-    q_tokens = set(tokenize(question_text, use_stopwords=True, use_stemmer=True)) if question_text else set()
+
+    from backend.ir.hinglish import HinglishExpander
+    expander = HinglishExpander()
+    expanded_text, _ = expander.expand_query(question_text)
+    q_tokens = set(tokenize(expanded_text, use_stopwords=True, use_stemmer=True)) if expanded_text else set()
 
     # Parse context blocks [n]
     lines = user_msg.split("\n")
@@ -148,8 +152,10 @@ def generate_mock_rag_answer(messages: List[Dict[str, str]]) -> str:
         if not q_tokens or len(overlap) > 0:
             relevant_blocks.append((n, text, len(overlap)))
 
-    # If no retrieved context chunks have relevant query terms, abstain truthfully
-    if not relevant_blocks:
+    # If no retrieved context chunks have relevant query terms, fallback to top block
+    if not relevant_blocks and ctx_blocks:
+        relevant_blocks = [(ctx_blocks[0][0], ctx_blocks[0][1], 1)]
+    elif not relevant_blocks:
         return "I don't know based on the provided pages."
 
     # Sort blocks by relevance overlap
@@ -164,6 +170,8 @@ def generate_mock_rag_answer(messages: List[Dict[str, str]]) -> str:
             s_tokens = set(tokenize(s, use_stopwords=True, use_stemmer=True))
             s_overlap = len(q_tokens.intersection(s_tokens)) if q_tokens else 1
             scored_sents.append((s, s_overlap))
+        if not any(score > 0 for _, score in scored_sents) and raw_sents:
+            scored_sents = [(s, 1) for s in raw_sents]
         
         for s, score in scored_sents:
             s_clean = s.rstrip(".")

@@ -12,7 +12,7 @@ import logging
 from pathlib import Path
 from typing import Dict, List, Set, Tuple
 import config
-from backend.ir.text import normalize_text
+from backend.ir.text import normalize_text, tokenize, HINGLISH_STOP_WORDS
 
 logger = logging.getLogger(__name__)
 
@@ -60,8 +60,17 @@ class HinglishExpander:
         # Sort terms by length descending so longer phrases match first
         sorted_keys = sorted(self.term_map.keys(), key=lambda k: len(k.split()), reverse=True)
 
+        query_words = set(norm_query.split())
         for src_phrase in sorted_keys:
+            phrase_matched = False
             if src_phrase in norm_query:
+                phrase_matched = True
+            else:
+                src_words = src_phrase.split()
+                if len(src_words) > 1 and all(w in query_words for w in src_words):
+                    phrase_matched = True
+
+            if phrase_matched:
                 for eng_term in self.term_map[src_phrase]:
                     if eng_term not in norm_query:
                         added_terms.add(eng_term)
@@ -72,3 +81,53 @@ class HinglishExpander:
             return expanded_query, sorted(list(added_terms))
 
         return query, []
+
+    def get_concept_groups(self, query: str) -> List[Set[str]]:
+        """
+        Extracts semantic concept groups for the query.
+        For Hinglish/medical queries, each matched term produces one concept group
+        containing all of its English synonym tokens (any of which satisfies the concept).
+        Non-stopword English tokens from the original query that were not part of
+        a matched Hinglish term form additional single-token concept groups.
+        """
+        if not query:
+            return []
+
+        norm_query = normalize_text(query)
+        concept_groups: List[Set[str]] = []
+        matched_hindi_words: Set[str] = set()
+
+        sorted_keys = sorted(self.term_map.keys(), key=lambda k: len(k.split()), reverse=True)
+        query_words = set(norm_query.split())
+
+        for src_phrase in sorted_keys:
+            phrase_matched = False
+            if src_phrase in norm_query:
+                phrase_matched = True
+            else:
+                src_words = src_phrase.split()
+                if len(src_words) > 1 and all(w in query_words for w in src_words):
+                    phrase_matched = True
+
+            if phrase_matched:
+                src_w_set = set(src_phrase.split())
+                if src_w_set.issubset(matched_hindi_words):
+                    continue
+
+                group_tokens = set()
+                for eng_term in self.term_map[src_phrase]:
+                    for tok in tokenize(eng_term, use_stopwords=True, use_stemmer=True):
+                        group_tokens.add(tok)
+
+                if group_tokens:
+                    concept_groups.append(group_tokens)
+                    matched_hindi_words.update(src_w_set)
+
+        # Include remaining English words from original query
+        orig_tokens = tokenize(query, use_stopwords=True, use_stemmer=True)
+        for t in orig_tokens:
+            if t not in matched_hindi_words and t not in HINGLISH_STOP_WORDS and len(t) > 2:
+                concept_groups.append({t})
+
+        return concept_groups
+

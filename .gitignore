@@ -42,5 +42,7 @@ htmlcov/
 .env
 
 # Generated caches (rebuilt automatically on first run)
-data/processed/*.pkl
-data/processed/*.npy
+data/processed/
+data/embeddings/
+data/train.csv
+

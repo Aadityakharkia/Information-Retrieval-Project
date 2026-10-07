@@ -89,6 +89,19 @@ def tokenize(
     return tokens
 
 
+# Common Romanized Hindi Medical Keywords for language detection
+HINGLISH_KEYWORDS = {
+    "dard", "bukhar", "buhar", "ilaj", "ilaaj", "dawa", "dawai", "goli", "khansi",
+    "khaansi", "jukam", "jokham", "gala", "gale", "thakan", "kamzori", "chakkar",
+    "ulti", "sojan", "soojhan", "gathiya", "twacha", "khujli", "kabz", "dast",
+    "jalan", "seene", "chhati", "fefde", "gurde", "gurdah", "jigar", "lakshan",
+    "karan", "kaaran", "upchar", "bachav", "roktham", "nuskha", "sar", "sir",
+    "pet", "pait", "madhumeh", "motapa"
+}
+
+UNIQUELY_HINGLISH = (HINGLISH_STOP_WORDS | HINGLISH_KEYWORDS) - ENGLISH_STOP_WORDS
+
+
 def detect_language(text: str) -> str:
     """
     Detects query language: 'hindi' (Devanagari script), 'hinglish' (Roman Hindi words), or 'english'.
@@ -102,11 +115,18 @@ def detect_language(text: str) -> str:
     if devanagari_chars / total_chars > 0.1:
         return "hindi"
 
-    # Tokenize without stop-words filter to inspect raw words
     raw_tokens = TOKEN_REGEX.findall(normalize_text(text))
-    hinglish_hits = sum(1 for t in raw_tokens if t in HINGLISH_STOP_WORDS)
+    hinglish_hits = sum(1 for t in raw_tokens if t in UNIQUELY_HINGLISH)
     
-    if hinglish_hits >= 1 or (len(raw_tokens) > 0 and hinglish_hits / len(raw_tokens) >= 0.2):
+    if hinglish_hits >= 1:
+        return "hinglish"
+
+    # Ambiguous words ('me', 'to') appear without any English-specific stop words
+    ambiguous_hits = sum(1 for t in raw_tokens if t in (HINGLISH_STOP_WORDS & ENGLISH_STOP_WORDS))
+    english_hits = sum(1 for t in raw_tokens if t in (ENGLISH_STOP_WORDS - HINGLISH_STOP_WORDS))
+    if ambiguous_hits >= 1 and english_hits == 0:
         return "hinglish"
 
     return "english"
+
+
