@@ -114,11 +114,27 @@ def api_library():
     page = _int_arg(request.args.get("page"), 1, 1, 10**6)
     limit = _int_arg(request.args.get("limit"), 12, 1, 50)
     search = request.args.get("search", "").strip().lower()
+    category = request.args.get("category", "").strip()
 
-    chunks = [
-        c for c in pipeline.chunks
-        if not search or search in c.get("question", "").lower() or search in c.get("text", "").lower()
-    ]
+    if search:
+        # Use pipeline search to get ranked results
+        # top_k=500 is large enough to get all relevant chunks for pagination
+        results = pipeline.search(search, retriever_type="hybrid", top_k=500)
+        chunks = [r["chunk"] for r in results]
+        
+        # Filter by category if provided
+        if category:
+            chunks = [
+                c for c in chunks 
+                if c.get("metadata", {}).get("category", "") == category or c.get("category", "") == category
+            ]
+    else:
+        # Fallback to category filtering
+        chunks = [
+            c for c in pipeline.chunks
+            if not category or c.get("metadata", {}).get("category", "") == category or c.get("category", "") == category
+        ]
+
     start = (page - 1) * limit
     return jsonify({
         "page": page,
@@ -127,6 +143,16 @@ def api_library():
         "total_pages": max(1, math.ceil(len(chunks) / limit)),
         "chunks": chunks[start:start + limit],
     })
+
+@app.get("/api/library/categories")
+def api_library_categories():
+    pipeline.initialize()
+    categories = set()
+    for c in pipeline.chunks:
+        cat = c.get("metadata", {}).get("category") or c.get("category")
+        if cat:
+            categories.add(cat)
+    return jsonify({"categories": sorted(list(categories))})
 
 
 @app.get("/api/models")
@@ -158,6 +184,6 @@ def api_health():
 
 if __name__ == "__main__":
     pipeline.initialize()  # warm indexes before serving the first request
-    port = int(os.getenv("PORT", "5000"))
+    port = int(os.getenv("PORT", "5001"))
     logger.info("HealthNest running on http://127.0.0.1:%d", port)
     app.run(host="127.0.0.1", port=port, debug=False)

@@ -1254,3 +1254,4 @@ body.page-exit {
     .service-list { grid-template-columns: 1fr; }
     .inspector-grid { grid-template-columns: 1fr; }
 }
+.topic-btn { background: none; border: none; color: #a1a1aa; padding: 0.5rem 1rem; cursor: pointer; text-align: left; width: 100%; border-radius: 8px; transition: all 0.2s ease; } .topic-btn:hover { background: rgba(255,255,255,0.05); color: #fff; } .topic-btn.active { background: rgba(255,255,255,0.1); color: #fff; font-weight: 600; }

@@ -48,14 +48,28 @@
       <button id="btnLibSearch" class="btn-pill btn-white" style="padding: 0 2rem;">Search</button>
     </div>
 
-    <!-- Chunks Grid -->
-    <div id="libraryGrid" class="library-grid"></div>
+    <!-- Layout Container -->
+    <div style="display: flex; gap: 2rem; align-items: flex-start; margin-top: 2rem;">
+      <!-- Sidebar for Topics -->
+      <aside style="flex: 0 0 250px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 1.5rem;">
+        <h3 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem;">Topics</h3>
+        <ul id="topicList" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem;">
+          <!-- Topics will be loaded here -->
+        </ul>
+      </aside>
 
-    <!-- Pagination -->
-    <div class="pagination-bar">
-      <button id="btnPrevPage" class="btn-pill btn-outline" style="padding: 0.6rem 1.4rem;">Previous</button>
-      <span id="pageIndicator" class="page-indicator">Page 1</span>
-      <button id="btnNextPage" class="btn-pill btn-outline" style="padding: 0.6rem 1.4rem;">Next</button>
+      <!-- Main Content -->
+      <div style="flex: 1;">
+        <!-- Chunks Grid -->
+        <div id="libraryGrid" class="library-grid" style="grid-template-columns: 1fr;"></div>
+
+        <!-- Pagination -->
+        <div class="pagination-bar">
+          <button id="btnPrevPage" class="btn-pill btn-outline" style="padding: 0.6rem 1.4rem;">Previous</button>
+          <span id="pageIndicator" class="page-indicator">Page 1</span>
+          <button id="btnNextPage" class="btn-pill btn-outline" style="padding: 0.6rem 1.4rem;">Next</button>
+        </div>
+      </div>
     </div>
   </main>
 
