@@ -6,12 +6,14 @@ const escapeHtml = (value) =>
 document.addEventListener("DOMContentLoaded", () => {
   let currentPage = 1;
   const limit = 12;
+  let currentCategory = "";
   const libraryGrid = document.getElementById("libraryGrid");
   const libSearchInput = document.getElementById("libSearchInput");
   const btnLibSearch = document.getElementById("btnLibSearch");
   const btnPrevPage = document.getElementById("btnPrevPage");
   const btnNextPage = document.getElementById("btnNextPage");
   const pageIndicator = document.getElementById("pageIndicator");
+  const topicList = document.getElementById("topicList");
 
   if (btnLibSearch) {
     btnLibSearch.addEventListener("click", () => {
@@ -45,14 +47,40 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  async function loadCategories() {
+    try {
+      const res = await fetch("/api/library/categories");
+      const data = await res.json();
+      const categories = data.categories || [];
+      topicList.innerHTML = `<li><button class="topic-btn active" data-category="">All Topics</button></li>` + 
+        categories.map(c => `<li><button class="topic-btn" data-category="${escapeHtml(c)}">${escapeHtml(c)}</button></li>`).join("");
+      
+      topicList.querySelectorAll(".topic-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          topicList.querySelectorAll(".topic-btn").forEach(b => b.classList.remove("active"));
+          e.target.classList.add("active");
+          currentCategory = e.target.getAttribute("data-category");
+          currentPage = 1;
+          loadPage();
+        });
+      });
+    } catch(err) {
+      console.error("Failed to load topics", err);
+    }
+  }
+
   async function loadPage() {
     libraryGrid.innerHTML = "<p style='color: #666;'>Loading document chunks...</p>";
     try {
-      const data = await fetchLibrary({
-        page: currentPage,
-        limit: limit,
-        search: libSearchInput ? libSearchInput.value.trim() : ""
-      });
+      let url = `/api/library?page=${currentPage}&limit=${limit}`;
+      if (libSearchInput && libSearchInput.value.trim()) {
+        url += `&search=${encodeURIComponent(libSearchInput.value.trim())}`;
+      }
+      if (currentCategory) {
+        url += `&category=${encodeURIComponent(currentCategory)}`;
+      }
+      const res = await fetch(url);
+      const data = await res.json();
 
       if (pageIndicator) {
         pageIndicator.textContent = `Page ${data.page} of ${data.total_pages || 1}`;
@@ -82,5 +110,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  loadCategories();
   loadPage();
 });

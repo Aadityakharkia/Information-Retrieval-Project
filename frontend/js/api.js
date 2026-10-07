@@ -4,7 +4,7 @@
  */
 
 const API_BASE = (typeof window !== "undefined" && (window.location.protocol === "file:" || (window.location.hostname !== "127.0.0.1" && window.location.hostname !== "localhost")))
-  ? "http://127.0.0.1:5000"
+  ? "http://127.0.0.1:5001"
   : "";
 
 export async function askQuestion(payload) {
