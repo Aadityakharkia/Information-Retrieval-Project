@@ -7,11 +7,13 @@ import { askQuestion } from "./api.js";
 const escapeHtml = (value) =>
   String(value ?? "").replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
 
-const GENERATOR_LABELS = { groq: "Groq", ollama: "Ollama", mock: "Offline extractive" };
+const GENERATOR_LABELS = { groq: "Groq", ollama: "Ollama", mock: "Offline extractive", verbatim: "Word for word" };
+const ORIGIN_LABELS = { prescription: "From your prescription", report: "From your report", database: "From the HealthNest database", wikipedia: "From Wikipedia" };
+const SUPPORT_LABELS = { verbatim: "Word for word", supported: "Supported" };
 
 document.addEventListener("DOMContentLoaded", async () => {
   const urlParams = new URLSearchParams(window.location.search);
-  const question = urlParams.get("q");
+  const question = urlParams.get("q") || sessionStorage.getItem("hn_question");
 
   const queryTitle = document.getElementById("queryTitle");
   const tagRetriever = document.getElementById("tagRetriever");
@@ -38,6 +40,27 @@ document.addEventListener("DOMContentLoaded", async () => {
   const model = localStorage.getItem("hn_model") || null; // null -> server default
   const enableAbstain = localStorage.getItem("hn_abstain") !== "false";
   const enableChecker = localStorage.getItem("hn_checker") !== "false";
+
+  const linkSelect = document.getElementById("linkMode");
+  const tagMemory = document.getElementById("tagMemory");
+  const permissionContainer = document.getElementById("permissionContainer");
+  const savedMode = localStorage.getItem("hn_link");
+  if ([...linkSelect.options].some((o) => o.value === savedMode)) linkSelect.value = savedMode;
+  linkSelect.addEventListener("change", () => {
+    localStorage.setItem("hn_link", linkSelect.value);
+    if (!urlParams.get("q")) sessionStorage.setItem("hn_question", question);
+    window.location.reload();
+  });
+
+  const payload = {
+    question,
+    retriever,
+    top_k: topK,
+    model,
+    enable_abstain: enableAbstain,
+    enable_checker: enableChecker,
+    link_mode: linkSelect.value
+  };
 
   tagRetriever.textContent = `Retriever: ${retriever.toUpperCase()}`;
   tagModel.textContent = "Model: loading...";
@@ -69,14 +92,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }, 1150);
 
   try {
-    const data = await askQuestion({
-      question,
-      retriever,
-      top_k: topK,
-      model,
-      enable_abstain: enableAbstain,
-      enable_checker: enableChecker
-    });
+    const data = await askQuestion(payload);
 
     const elapsed = Date.now() - startTime;
     if (elapsed < minLoadTime) {
@@ -105,7 +121,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   function renderAnswerData(data) {
     tagStatus.textContent = `Status: ${data.status.toUpperCase()}`;
     const engine = GENERATOR_LABELS[data.generator];
-    tagModel.textContent = engine ? `Model: ${data.model} (${engine})` : `Model: ${data.model}`;
+    tagModel.textContent = data.local_only ? `Model: ${engine || "local"} (this computer)` : engine ? `Model: ${data.model} (${engine})` : `Model: ${data.model}`;
+    tagMemory.hidden = !data.memory_used;
+    renderPermission(data);
 
     // Emergency Banner
     if (data.emergency_banner) {
@@ -152,18 +170,36 @@ document.addEventListener("DOMContentLoaded", async () => {
             <strong>Abstention Reason:</strong> ${escapeHtml(reason)}
           </p>
           <div style="margin-top:14px; font-size:0.85rem; color:#888888;">
-            The indexed medical pages do not contain verified factual support for this specific inquiry.
+            ${data.wikipedia_query ? "The Wikipedia pages found do not answer this question." : "The indexed medical pages do not contain verified factual support for this specific inquiry."}
           </div>
         </div>
       `;
     } else {
+      if (data.memory_used) {
+        const lines = [...(data.remarks || [])];
+        if (data.sentences.some((s) => s.note)) lines.push("HealthNest compares a value only with the range printed beside it. It is not a diagnosis. A doctor must interpret your report.");
+        lines.forEach((text) => {
+          const p = document.createElement("p");
+          p.className = "report-remark";
+          p.textContent = text;
+          sentencesContainer.appendChild(p);
+        });
+      }
+      let lastOrigin = null;
       data.sentences.forEach((s, idx) => {
+        if (s.origin && s.origin !== lastOrigin) {
+          lastOrigin = s.origin;
+          const h = document.createElement("h3");
+          h.className = "origin-heading";
+          h.textContent = ORIGIN_LABELS[s.origin] || "";
+          sentencesContainer.appendChild(h);
+        }
         const sDiv = document.createElement("div");
         sDiv.className = "sentence-item stagger-item";
         sDiv.style.animationDelay = `${(idx * 0.08).toFixed(2)}s`;
 
         const badgeClass = s.support && s.support.supported ? "badge-supported" : "badge-not-found";
-        const badgeText = s.support && s.support.supported ? "Supported" : "Not Found In Source";
+        const badgeText = s.support && s.support.supported ? (SUPPORT_LABELS[s.support.badge] || "Supported") : "Not Found In Source";
 
         let citationHTML = "";
         if (s.citations && s.citations.length > 0) {
@@ -176,6 +212,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           <span>${escapeHtml(s.text)}</span>
           ${citationHTML}
           <span class="answer-badge ${badgeClass}" style="margin-left:12px; font-size:11px;">${badgeText}</span>
+          ${s.note ? `<p class="report-note">${escapeHtml(s.note)}</p>` : ""}
         `;
 
         sentencesContainer.appendChild(sDiv);
@@ -210,12 +247,16 @@ document.addEventListener("DOMContentLoaded", async () => {
           <div style="margin-bottom:10px;">
             <span style="font-weight:900; color:#111111; font-size:18px; margin-right:8px;">[${src.n}]</span>
             <strong style="font-size:18px; color:#111111;">${escapeHtml(src.question)}</strong>
+            <span class="origin-tag">${escapeHtml(ORIGIN_LABELS[src.origin] || "")}</span>
           </div>
-          <p style="font-size:15px; color:#475569; line-height:1.7;">${escapeHtml(src.text)}</p>
-          <div style="margin-top:14px; font-size:13px; color:#64748b; display:flex; gap:20px;">
-            <span>Retrieval Score: <strong>${src.score}</strong></span>
+          <p class="source-text" style="font-size:15px; color:#475569; line-height:1.7;">${escapeHtml(src.text)}</p>
+          ${src.url && src.url.startsWith("https://") ? `<p style="font-size:13px; margin-top:8px;"><a href="${escapeHtml(src.url)}" target="_blank" rel="noopener noreferrer">Read on Wikipedia</a> (CC BY-SA)</p>` : ""}
+          ${src.origin === "prescription" || src.origin === "report" ? "" : `<div style="margin-top:14px; font-size:13px; color:#64748b; display:flex; gap:20px; flex-wrap:wrap;">
+            <span>Retrieval Score: <strong>${escapeHtml(src.score)}</strong></span>
+            ${src.link ? `${src.link.pagerank !== undefined ? `<span>PageRank: <strong>${escapeHtml(src.link.pagerank)}</strong></span>` : ""}
+            <span>HITS authority / hub: <strong>${escapeHtml(src.link.authority)} / ${escapeHtml(src.link.hub)}</strong></span>` : ""}
             <span>Matched Terms: ${src.matched_terms && src.matched_terms.length ? escapeHtml(src.matched_terms.join(", ")) : "N/A"}</span>
-          </div>
+          </div>`}
         `;
         sourcesContainer.appendChild(srcDiv);
       });
@@ -226,6 +267,58 @@ document.addEventListener("DOMContentLoaded", async () => {
       document.getElementById("inspectorSparseList").innerHTML = (data.inspector.sparse_top5 || []).map((id) => `<li>${id}</li>`).join("");
       document.getElementById("inspectorDenseList").innerHTML = (data.inspector.dense_top5 || []).map((id) => `<li>${id}</li>`).join("");
       document.getElementById("inspectorFusedList").innerHTML = (data.inspector.fused_top5 || []).map((id) => `<li>${id}</li>`).join("");
+      const links = data.inspector.link_analysis || {};
+      const pages = data.wikipedia_pages || [];
+      const rows = (items) => items.length ? items.map((t) => `<li>${escapeHtml(t.topic)} <strong>${escapeHtml(t.score)}</strong></li>`).join("") : "<li>Not used for this answer</li>";
+      const wiki = (key) => pages.filter((p) => p[key] > 0).sort((x, y) => y[key] - x[key]).map((p) => ({ topic: p.title, score: p[key] }));
+      document.getElementById("inspectorPageRankList").innerHTML = rows(links.top_pagerank || []);
+      document.getElementById("inspectorAuthorityList").innerHTML = rows(links.top_authorities || wiki("authority"));
+      document.getElementById("inspectorHubList").innerHTML = rows(links.top_hubs || wiki("hub"));
     }
+  }
+
+  /** Asks before anything is sent to Wikipedia; the user sees and can edit the exact words. */
+  function renderPermission(data) {
+    permissionContainer.replaceChildren();
+    const offer = data.wikipedia_offer;
+    if (!offer) return;
+    const box = document.createElement("div");
+    box.className = "permission-box";
+    box.innerHTML = `
+      <h3>Search Wikipedia instead?</h3>
+      <p id="permissionWhy"></p>
+      <input id="permissionQuery" type="text" maxlength="120" aria-label="Words to send to Wikipedia">
+      <p class="private-meta">Only these words go to Wikipedia. Your documents are not sent. Wikipedia is not medically reviewed.</p>
+      <div class="permission-actions" style="margin-top:0.8rem;">
+        <button type="button" class="btn-pill btn-outline" id="permissionYes">Yes, search Wikipedia</button>
+        <button type="button" class="btn-pill btn-white" id="permissionNo">No</button>
+      </div>
+      <p id="permissionMessage" class="private-message" role="status" aria-live="polite"></p>`;
+    permissionContainer.appendChild(box);
+    const missing = data.missing_medicines || [];
+    box.querySelector("#permissionWhy").textContent = missing.length
+      ? `HealthNest has no information that answers this for: ${missing.join(", ")}.`
+      : "HealthNest's database does not answer this question.";
+    const input = box.querySelector("#permissionQuery");
+    const message = box.querySelector("#permissionMessage");
+    const yes = box.querySelector("#permissionYes");
+    input.value = offer.query;
+    box.querySelector("#permissionNo").addEventListener("click", () => permissionContainer.replaceChildren());
+    yes.addEventListener("click", async () => {
+      const term = input.value.trim();
+      if (!term) {
+        message.textContent = "Enter the words to search for.";
+        return;
+      }
+      yes.disabled = true;
+      message.textContent = "Searching Wikipedia…";
+      try {
+        renderAnswerData(await askQuestion({ ...payload, allow_wikipedia: true, wikipedia_query: term }));
+      } catch (err) {
+        yes.disabled = false;
+        message.textContent = err.message;
+        message.classList.add("error");
+      }
+    });
   }
 });

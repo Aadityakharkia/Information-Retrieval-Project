@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Health — HealthNest</title>
+  <meta name="description" content="Your private prescriptions, reports and search history.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="header">
+    <div class="container header-inner">
+      <a href="/" class="logo-block">
+        <span class="logo-main">HEALTHNEST</span>
+        <span class="logo-sub">verifiable health rag</span>
+      </a>
+      <nav class="header-nav-links">
+        <a href="/">Home</a>
+        <a href="/library">Library</a>
+        <a href="/my" class="active">My Health</a>
+        <a href="/about">About</a>
+      </nav>
+      <a href="/" class="btn-pill btn-outline">Ask Question</a>
+    </div>
+  </header>
+
+  <main class="container" style="padding-top: 1.5rem; padding-bottom: 5rem;">
+    <h1 class="text-massive" style="font-size: 2.5rem; margin-bottom: 0.5rem;">My Health</h1>
+    <p class="text-subtitle" style="margin-bottom: 2rem;">
+      Private to this browser. Your documents stay on the HealthNest computer and are never sent to an outside AI service.
+      Anyone who uses this browser can see them.
+    </p>
+    <p id="pageMessage" class="private-message" role="status" aria-live="polite"></p>
+
+    <section class="answer-hero-header">
+      <h2 class="private-heading">Prescriptions and reports</h2>
+      <p class="text-subtitle">Upload a text PDF (up to 10 MB). Scanned or handwritten documents cannot be read yet.</p>
+      <div class="private-actions">
+        <label class="btn-pill btn-outline" for="pdfInput" id="pdfLabel">Upload PDF</label>
+        <input type="file" id="pdfInput" class="visually-hidden" accept="application/pdf,.pdf">
+      </div>
+      <div id="documentList"></div>
+    </section>
+
+    <section class="answer-hero-header">
+      <div class="private-row">
+        <h2 class="private-heading">Search history</h2>
+        <button id="btnClearHistory" type="button" class="btn-pill btn-outline">Clear history</button>
+      </div>
+      <ul id="historyList" class="private-list"></ul>
+    </section>
+
+    <button id="btnDeleteAll" type="button" class="btn-pill btn-danger">Delete all my data</button>
+  </main>
+
+  <footer class="app-footer">
+    <p>HealthNest • Information from a Q&A dataset, not medical advice</p>
+  </footer>
+  <script type="module" src="js/my.js"></script>
+</body>
+</html>

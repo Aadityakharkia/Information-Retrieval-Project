@@ -83,6 +83,14 @@ DENSE_BATCH_SIZE = 32
 RRF_K = 60
 HYBRID_ALPHA = 0.5  # Weight for sparse in weighted sum fusion (1-alpha for dense)
 
+# Link Analysis (PageRank / HITS over the topic-mention graph, see backend/ir/linkgraph.py)
+PAGERANK_DAMPING = 0.85
+HITS_NEIGHBOUR_CAP = 50        # in/out neighbours added per root topic
+LINK_MODES = ("off", "pagerank", "hits", "both")
+LINK_DEFAULT_MODE = "both"
+LINK_WEIGHT = 0.20             # share of link evidence in the final ordering
+LINK_POOL = 20                 # candidates re-ranked before cutting to top_k
+
 # RAG & LLM Configuration
 # Provider order: Groq (if GROQ_API_KEY set) -> local Ollama -> offline extractive mock.
 # Ollama model tags contain ':' (e.g. llama3.2:1b); Groq model ids do not.
@@ -100,6 +108,9 @@ LLM_TIMEOUT_SECONDS = 20
 # Abstention Thresholds (Tuned on dev set)
 ABSTAIN_SCORE_THRESHOLD = 0.12
 ABSTAIN_QUERY_COVERAGE_THRESHOLD = 0.40
+# Best dense cosine among the results must reach this (hybrid/dense retrievers only).
+# Chosen on eval/model_comparison/queries.json: off-topic max 0.43, English answerable min 0.46.
+ABSTAIN_DENSE_THRESHOLD = 0.45
 
 # Answer Verification Checker Thresholds
 CHECKER_SPARSE_COSINE_MIN = 0.20
@@ -122,3 +133,19 @@ SELF_HARM_KEYWORDS = [
     "cutting myself", "overdose"
 ]
 SELF_HARM_SAFETY_MESSAGE = "💙 Help is available. You are not alone. Please reach out to emergency services (112 in India), a trusted person, or a crisis helpline immediately."
+
+# Private patient memory (prescription PDFs + search history). Local SQLite, git-ignored.
+PRIVATE_DIR = DATA_DIR / "private"
+PRIVATE_DB_PATH = PRIVATE_DIR / "healthnest.db"
+PATIENT_COOKIE = "hn_patient"
+PATIENT_COOKIE_DAYS = 365
+MAX_UPLOAD_BYTES = 10 * 1024 * 1024
+MAX_PDF_PAGES = 30
+MAX_DOC_CHARS = 100_000
+MAX_DOCS_PER_PATIENT = 10
+HISTORY_LIMIT = 100            # searches kept per patient
+
+# Wikipedia fallback: only contacted after the user approves the exact search term.
+WIKIPEDIA_MAX_PAGES = 4
+WIKIPEDIA_TIMEOUT_SECONDS = 10
+WIKIPEDIA_USER_AGENT = "HealthNest/1.0 (educational information-retrieval project)"

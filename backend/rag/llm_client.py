@@ -14,6 +14,7 @@ Temperature is 0.0 for deterministic, verifiable answers.
 import logging
 import re
 from typing import List, Dict, Any, Tuple
+from urllib.parse import urlparse
 
 import requests
 
@@ -56,11 +57,24 @@ def generate_llm_response(
     messages: List[Dict[str, str]],
     model: str = config.DEFAULT_MODEL,
     temperature: float = config.LLM_TEMPERATURE,
+    local_only: bool = False,
 ) -> Tuple[str, str]:
     """
     Returns (answer_text, provider) where provider is 'groq', 'ollama' or 'mock'.
     Never raises on provider failure; degrades to the next provider instead.
+    local_only=True (used whenever a prescription is involved) never contacts another computer.
     """
+    if local_only:
+        host = urlparse(config.OLLAMA_BASE_URL).hostname
+        if model != config.MOCK_MODEL and host in ("localhost", "127.0.0.1", "::1"):
+            try:
+                text = _call_ollama(messages, model if ":" in model else config.OLLAMA_MODELS[0], temperature)
+                if text:
+                    return text, "ollama"
+            except Exception as exc:
+                logger.info("Local Ollama unavailable (%s); using offline generator.", type(exc).__name__)
+        return generate_mock_rag_answer(messages), "mock"
+
     if model != config.MOCK_MODEL:
         is_ollama_tag = ":" in model
         if config.GROQ_API_KEY and not is_ollama_tag:
@@ -163,7 +177,7 @@ def generate_mock_rag_answer(messages: List[Dict[str, str]]) -> str:
 
     cited_sentences = []
     for n, text, _ in relevant_blocks[:3]:
-        raw_sents = [s.strip() for s in text.split(".") if len(s.strip()) > 15]
+        raw_sents = [s.strip() for s in re.split(r"\.(?!\s*\d)", text) if len(s.strip()) > 15]  # keep decimals such as 2.5 mg whole
         # Prioritize sentences that contain query terms
         scored_sents = []
         for s in raw_sents:

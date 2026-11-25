@@ -46,3 +46,5 @@ data/processed/
 data/embeddings/
 data/train.csv
 
+# Private patient memory - never commit
+data/private/

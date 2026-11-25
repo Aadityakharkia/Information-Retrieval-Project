@@ -68,7 +68,8 @@ def evaluate_abstention(
     score_threshold: float = config.ABSTAIN_SCORE_THRESHOLD,
     coverage_threshold: float = config.ABSTAIN_QUERY_COVERAGE_THRESHOLD,
     added_terms: List[str] = None,
-    concept_groups: List[Set[str]] = None
+    concept_groups: List[Set[str]] = None,
+    dense_top_score: float = None
 ) -> Dict[str, Any]:
     """
     Evaluates evidence quality and returns abstention decision dict.
@@ -90,7 +91,8 @@ def evaluate_abstention(
         "scaled_top_score": round(scaled_top_score, 4),
         "query_coverage": coverage,
         "score_threshold": score_threshold,
-        "coverage_threshold": coverage_threshold
+        "coverage_threshold": coverage_threshold,
+        "dense_top_score": dense_top_score
     }
 
     # Condition 1: No retrieval results or score below score threshold
@@ -98,6 +100,15 @@ def evaluate_abstention(
         return {
             "should_abstain": True,
             "reason": f"Low retrieval confidence score ({scaled_top_score:.4f} < threshold {score_threshold:.4f})",
+            "metrics": metrics
+        }
+
+    # Condition 1b: even the semantically closest passage is far from the question (off-topic).
+    # RRF scores depend only on ranks, so in hybrid mode Condition 1 alone can never reject anything.
+    if dense_top_score is not None and dense_top_score < config.ABSTAIN_DENSE_THRESHOLD:
+        return {
+            "should_abstain": True,
+            "reason": f"No passage is close enough in meaning ({dense_top_score:.2f} < {config.ABSTAIN_DENSE_THRESHOLD:.2f})",
             "metrics": metrics
         }
 

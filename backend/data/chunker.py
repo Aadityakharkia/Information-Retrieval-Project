@@ -23,7 +23,8 @@ def split_into_sentences(text: str) -> List[str]:
     if not text:
         return []
     # Split on period, exclamation, or question mark (and optional bracketed citation) followed by whitespace
-    sentences = re.split(r'(?<=[.!?])\s*(?=\[?\d+\]?\s*|$|\b[A-Z])', text.strip())
+    # Never split inside a decimal: "2.5 mg" (also "2. 5 mg") must stay one sentence.
+    sentences = re.split(r'(?<=[.!?])(?!(?<=\d\.)\s*\d)\s*(?=\[?\d+\]?\s*|$|\b[A-Z])', text.strip())
     # Clean up empty splits
     result = []
     for s in sentences:

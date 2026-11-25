@@ -3,7 +3,7 @@
  * Bento Box Design System (Dr. Preeti layout) + Live IR Typeahead & Answer Page Navigation.
  */
 
-import { fetchSuggestions } from "./api.js";
+import { clearHistory, fetchHistory, fetchSuggestions, openAnswer } from "./api.js";
 
 document.addEventListener("DOMContentLoaded", () => {
   // 1. Elite Preloader
@@ -113,7 +113,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     document.body.classList.add("page-exit");
     setTimeout(() => {
-      window.location.href = `/answer.html?q=${encodeURIComponent(q)}`;
+      openAnswer(q);
     }, 280);
   }
 
@@ -132,58 +132,85 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
-    // 6. Live IR Typeahead Auto-Suggest Listener
+    // 6. Recent searches (on focus) + live IR typeahead (while typing)
     let debounceTimer = null;
+    let requestNo = 0; // ignore replies that arrive after a newer keystroke
     if (suggestDropdown) {
-      searchInput.addEventListener("input", (e) => {
-        clearTimeout(debounceTimer);
-        const val = e.target.value.trim();
-        if (val.length < 1) {
-          suggestDropdown.classList.remove("active");
-          suggestDropdown.innerHTML = "";
-          return;
-        }
+      const SEARCH_ICON = `<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>`;
+      const CLOCK_ICON = `<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/>`;
+      const hide = () => {
+        suggestDropdown.classList.remove("active");
+        suggestDropdown.replaceChildren();
+      };
 
-        debounceTimer = setTimeout(async () => {
+      const addItem = (text, icon) => {
+        const div = document.createElement("div");
+        div.className = "suggest-item";
+        div.innerHTML = `<svg class="suggest-item-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">${icon}</svg><span></span>`;
+        div.querySelector("span").textContent = text; // never innerHTML: searches are user input
+        div.addEventListener("click", (evt) => {
+          evt.stopPropagation();
+          searchInput.value = text;
+          hide();
+          triggerSearch(text);
+        });
+        suggestDropdown.appendChild(div);
+      };
+
+      const addRecentHead = () => {
+        const head = document.createElement("div");
+        head.className = "suggest-head";
+        head.innerHTML = `<span>Recent searches</span><button type="button">Clear history</button>`;
+        head.querySelector("button").addEventListener("click", async (evt) => {
+          evt.stopPropagation();
+          if (!window.confirm("Clear your whole search history? This cannot be undone.")) return;
           try {
-            const suggestions = await fetchSuggestions(val);
-            if (!suggestions || suggestions.length === 0) {
-              suggestDropdown.classList.remove("active");
-              suggestDropdown.innerHTML = "";
-              return;
-            }
-
-            suggestDropdown.innerHTML = "";
-            suggestions.forEach((item) => {
-              const div = document.createElement("div");
-              div.className = "suggest-item";
-              div.innerHTML = `
-                <svg class="suggest-item-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <circle cx="11" cy="11" r="8"/>
-                  <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                </svg>
-                <span>${item}</span>
-              `;
-              div.addEventListener("click", (evt) => {
-                evt.stopPropagation();
-                searchInput.value = item;
-                suggestDropdown.classList.remove("active");
-                triggerSearch(item);
-              });
-              suggestDropdown.appendChild(div);
-            });
-
-            suggestDropdown.classList.add("active");
+            await clearHistory();
+            hide();
           } catch (err) {
-            console.error("Auto-suggest error:", err);
+            console.error("Clear history error:", err);
           }
-        }, 100);
+        });
+        suggestDropdown.appendChild(head);
+      };
+
+      const refresh = async () => {
+        const mine = ++requestNo;
+        const val = searchInput.value.trim();
+        const history = await fetchHistory().catch(() => []);
+        if (mine !== requestNo) return;
+        const recent = history.map((h) => h.query).filter((q) => q.toLowerCase().includes(val.toLowerCase())).slice(0, val ? 3 : 5);
+        const show = (suggestions) => {
+          const fresh = suggestions.filter((s) => !recent.some((r) => r.toLowerCase() === s.toLowerCase()));
+          hide();
+          if (recent.length) {
+            addRecentHead();
+            recent.forEach((q) => addItem(q, CLOCK_ICON));
+          }
+          fresh.forEach((q) => addItem(q, SEARCH_ICON));
+          if (recent.length || fresh.length) suggestDropdown.classList.add("active");
+        };
+        show([]); // recent searches first; suggestions can take longer
+        if (!val) return;
+        try {
+          const suggestions = await fetchSuggestions(val);
+          if (mine === requestNo) show(suggestions);
+        } catch (err) {
+          console.error("Auto-suggest error:", err);
+        }
+      };
+
+      searchInput.addEventListener("focus", refresh);
+      searchInput.addEventListener("input", () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(refresh, 100);
+      });
+      searchInput.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") hide();
       });
 
       document.addEventListener("click", (e) => {
-        if (!suggestDropdown.contains(e.target) && e.target !== searchInput) {
-          suggestDropdown.classList.remove("active");
-        }
+        if (!suggestDropdown.contains(e.target) && e.target !== searchInput) hide();
       });
     }
   }

@@ -56,3 +56,32 @@ export async function fetchEvalSummary() {
   }
   return response.json();
 }
+
+// ---------------------------------------------------------------------------
+// Private patient memory. The browser's HttpOnly cookie identifies the patient.
+// ---------------------------------------------------------------------------
+async function privateCall(path, options = {}) {
+  const response = await fetch(`${API_BASE}${path}`, options);
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || `Server returned HTTP ${response.status}`);
+  return data;
+}
+
+export const fetchHistory = async (limit = 100) => (await privateCall(`/api/history?limit=${limit}`)).history;
+export const clearHistory = () => privateCall("/api/history", { method: "DELETE" });
+export const deleteSearch = (id) => privateCall(`/api/history/${id}`, { method: "DELETE" });
+export const fetchDocuments = async () => (await privateCall("/api/documents")).documents;
+export const deleteDocument = (id) => privateCall(`/api/documents/${id}`, { method: "DELETE" });
+export const deleteEverything = () => privateCall("/api/me", { method: "DELETE" });
+export function uploadDocument(file) {
+  const body = new FormData();
+  body.append("file", file);
+  return privateCall("/api/documents", { method: "POST", body });
+}
+
+/** Opens the answer page. The question travels in sessionStorage, not the URL, so that
+ *  health questions do not stay in the browser's own history after HealthNest history is cleared. */
+export function openAnswer(question) {
+  sessionStorage.setItem("hn_question", question);
+  window.location.href = "/answer";
+}

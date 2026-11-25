@@ -12,26 +12,36 @@ Endpoints
   GET  /api/models        selectable LLM models
   GET  /api/eval/summary  retrieval benchmark report card
   GET  /api/health        liveness + index status
+  GET/POST /api/documents, DELETE /api/documents/<id>   the patient's prescription PDFs
+  GET/DELETE /api/history, DELETE /api/history/<id>      the patient's search history
+  DELETE /api/me          delete everything stored for this patient
 """
 
 import json
 import logging
 import math
 import os
+import secrets
+from urllib.parse import urlparse
 
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, g, jsonify, request, send_from_directory
 
 import config
+from backend.memory import report
+from backend.memory.prescription import PdfError, extract_pdf, medicines
+from backend.memory.store import PatientStore, patient_id
 from backend.pipeline import RETRIEVER_TYPES, get_pipeline
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 FRONTEND_DIR = config.BASE_DIR / "frontend"
-PAGES = {"": "index.html", "answer": "answer.html", "library": "library.html", "about": "about.html"}
+PAGES = {"": "index.html", "answer": "answer.html", "library": "library.html", "about": "about.html", "my": "my.html"}
 
 app = Flask(__name__, static_folder=str(FRONTEND_DIR), static_url_path="")
+app.config["MAX_CONTENT_LENGTH"] = config.MAX_UPLOAD_BYTES + 64 * 1024  # PDF + multipart overhead
 pipeline = get_pipeline()
+store = PatientStore()
 
 
 def _int_arg(value, default, lo, hi):
@@ -46,10 +56,47 @@ def _error(message, status=400):
 
 
 # ----------------------------------------------------------------------------
+# Patient identity: anonymous random token in an HttpOnly, SameSite=Strict cookie
+# ----------------------------------------------------------------------------
+@app.before_request
+def _block_cross_site_writes():
+    origin = request.headers.get("Origin")
+    if request.method not in ("GET", "HEAD", "OPTIONS") and origin and urlparse(origin).netloc != request.host:
+        return _error("Cross-site requests are not allowed.", 403)
+
+
+def _current_patient(create: bool = False):
+    """Patient id for this browser, or None. With create=True a new identity is issued."""
+    token = request.cookies.get(config.PATIENT_COOKIE, "")
+    if len(token) < 32:
+        if not create:
+            return None
+        token = secrets.token_urlsafe(32)
+        g.new_patient_token = token
+    return patient_id(token)
+
+
+@app.after_request
+def _finish_response(response):
+    token = g.pop("new_patient_token", None)
+    if token:
+        response.set_cookie(config.PATIENT_COOKIE, token, max_age=config.PATIENT_COOKIE_DAYS * 86400,
+                            httponly=True, samesite="Strict", secure=request.is_secure)
+    if request.path.startswith("/api/"):
+        response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+@app.errorhandler(413)
+def _too_large(_):
+    return _error(f"File is too large (maximum {config.MAX_UPLOAD_BYTES // (1024 * 1024)} MB).", 413)
+
+
+# ----------------------------------------------------------------------------
 # Frontend pages (also reachable as /answer.html etc. through the static folder)
 # ----------------------------------------------------------------------------
 @app.route("/", defaults={"page": ""})
-@app.route("/<any(answer, library, about):page>")
+@app.route("/<any(answer, library, about, my):page>")
 def serve_page(page):
     return send_from_directory(FRONTEND_DIR, PAGES[page])
 
@@ -70,7 +117,20 @@ def api_ask():
     if retriever not in RETRIEVER_TYPES:
         return _error(f"Unknown retriever '{retriever}'. Choose from {list(RETRIEVER_TYPES)}.")
 
+    link_mode = data.get("link_mode") or config.LINK_DEFAULT_MODE
+    if link_mode not in config.LINK_MODES:
+        return _error(f"Unknown link_mode '{link_mode}'. Choose from {list(config.LINK_MODES)}.")
+
+    # Wikipedia is contacted only with explicit permission for one exact search term.
+    wiki_query = None
+    if data.get("allow_wikipedia") is True:
+        wiki_query = data.get("wikipedia_query")
+        wiki_query = " ".join(wiki_query.split()) if isinstance(wiki_query, str) else ""
+        if not wiki_query or len(wiki_query) > 120:
+            return _error("Field 'wikipedia_query' (1-120 characters) is required when 'allow_wikipedia' is true.")
+
     model = data.get("model") or config.DEFAULT_MODEL
+    pid = _current_patient(create=True)
     try:
         result = pipeline.ask(
             question=question,
@@ -80,11 +140,92 @@ def api_ask():
             enable_abstain=bool(data.get("enable_abstain", True)),
             enable_checker=bool(data.get("enable_checker", True)),
             use_champion_lists=bool(data.get("use_champion_lists", False)),
+            link_mode=link_mode,
+            patient_docs=store.documents(pid) if data.get("use_memory", True) else None,
+            wiki_query=wiki_query,
         )
+        # Crisis searches are never kept in the history.
+        if result["status"] != "self_harm" and data.get("save_history", True):
+            store.add_search(pid, question, result["status"])
         return jsonify(result)
     except Exception:
         logger.exception("/api/ask failed")
         return _error("Internal error while answering the question.", 500)
+
+
+# ----------------------------------------------------------------------------
+# Private patient memory
+# ----------------------------------------------------------------------------
+def _doc_json(d):
+    return {"id": d["id"], "filename": d["filename"], "pages": d["pages"], "created": d["created"],
+            "kind": "report" if report.is_report(d["text"]) else "prescription",
+            "medicines": medicines(d["text"]), "tests": [r["name"] for r in report.rows(d["text"])], "text": d["text"]}
+
+
+@app.get("/api/documents")
+def api_documents():
+    pid = _current_patient()
+    return jsonify({"documents": [_doc_json(d) for d in store.documents(pid)] if pid else []})
+
+
+@app.post("/api/documents")
+def api_upload_document():
+    upload = request.files.get("file")
+    if upload is None or not upload.filename:
+        return _error("Please choose a PDF file.")
+    data = upload.read(config.MAX_UPLOAD_BYTES + 1)
+    if len(data) > config.MAX_UPLOAD_BYTES:
+        return _too_large(None)
+    pid = _current_patient(create=True)
+    if len(store.documents(pid)) >= config.MAX_DOCS_PER_PATIENT:
+        return _error(f"You can keep up to {config.MAX_DOCS_PER_PATIENT} documents. Delete one first.", 409)
+    try:
+        text, pages = extract_pdf(data)
+    except PdfError as exc:
+        return _error(str(exc), 422)
+    name = os.path.basename(upload.filename.replace("\\", "/"))[:120] or "document.pdf"
+    doc_id = store.add_document(pid, name, pages, text)
+    doc = next(d for d in store.documents(pid) if d["id"] == doc_id)
+    return jsonify(_doc_json(doc)), 201
+
+
+@app.delete("/api/documents/<int:doc_id>")
+def api_delete_document(doc_id):
+    pid = _current_patient()
+    if not pid or not store.delete_document(pid, doc_id):
+        return _error("Document not found.", 404)
+    return jsonify({"deleted": doc_id})
+
+
+@app.get("/api/history")
+def api_history():
+    pid = _current_patient()
+    limit = _int_arg(request.args.get("limit"), config.HISTORY_LIMIT, 1, config.HISTORY_LIMIT)
+    return jsonify({"history": store.history(pid, limit) if pid else []})
+
+
+@app.delete("/api/history")
+def api_clear_history():
+    pid = _current_patient()
+    return jsonify({"deleted": store.clear_history(pid) if pid else 0})
+
+
+@app.delete("/api/history/<int:item_id>")
+def api_delete_search(item_id):
+    pid = _current_patient()
+    if not pid or not store.delete_search(pid, item_id):
+        return _error("Search not found.", 404)
+    return jsonify({"deleted": item_id})
+
+
+@app.delete("/api/me")
+def api_delete_me():
+    pid = _current_patient()
+    if pid:
+        store.delete_patient(pid)
+    response = jsonify({"deleted": bool(pid)})
+    response.delete_cookie(config.PATIENT_COOKIE, httponly=True, samesite="Strict")
+    return response
 
 
 @app.get("/api/suggest")

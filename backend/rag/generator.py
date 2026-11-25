@@ -55,7 +55,8 @@ def generate_answer(
     question: str,
     top_chunks: List[Dict[str, Any]],
     model: str = config.DEFAULT_MODEL,
-    added_terms: List[str] = None
+    added_terms: List[str] = None,
+    local_only: bool = False
 ) -> Dict[str, Any]:
     """
     Executes grounded RAG generation using LLM.
@@ -69,7 +70,7 @@ def generate_answer(
         }
     """
     messages = format_rag_prompt(question, top_chunks, added_terms=added_terms)
-    raw_response, provider = generate_llm_response(messages, model=model)
+    raw_response, provider = generate_llm_response(messages, model=model, local_only=local_only)
     # Some models emit full-width brackets (e.g. 【1】); normalise to [1].
     raw_response = re.sub(r"[【\[]\s*(\d+(?:\s*,\s*\d+)*)\s*[】\]]", r"[\1]", raw_response)
 

@@ -4,6 +4,7 @@ requests>=2.31
 numpy>=1.24
 nltk>=3.8
 sentence-transformers>=2.2.2
+pypdf>=5.0
 
 # Evaluation & tests
 matplotlib>=3.7

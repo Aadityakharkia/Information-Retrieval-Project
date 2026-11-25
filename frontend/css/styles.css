@@ -1255,3 +1255,50 @@ body.page-exit {
     .inspector-grid { grid-template-columns: 1fr; }
 }
 .topic-btn { background: none; border: none; color: #a1a1aa; padding: 0.5rem 1rem; cursor: pointer; text-align: left; width: 100%; border-radius: 8px; transition: all 0.2s ease; } .topic-btn:hover { background: rgba(255,255,255,0.05); color: #fff; } .topic-btn.active { background: rgba(255,255,255,0.1); color: #fff; font-weight: 600; }
+
+/* MY HEALTH, RECENT SEARCHES, PERMISSION PROMPT, LINK ANALYSIS */
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.visually-hidden:focus-visible, .private-actions:focus-within .btn-pill { outline: 2px solid var(--text-pure); outline-offset: 3px; }
+button.btn-pill { font-family: inherit; }
+.btn-small { padding: 0.35rem 0.9rem; font-size: 0.8rem; flex-shrink: 0; }
+.btn-danger { background: #ffffff; border: 1px solid #c5221f; color: #c5221f; }
+.btn-danger:hover { background: #c5221f; color: #ffffff; }
+.private-heading { font-size: 1.4rem; font-weight: 800; }
+.private-actions { margin: 1.2rem 0; }
+.private-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.private-grow { min-width: 0; flex: 1; }
+.private-card { background: #ffffff; border: 1px solid var(--border-light); border-radius: 18px; padding: 1.25rem; margin-top: 1rem; line-height: 1.6; overflow-wrap: anywhere; }
+.private-card summary { cursor: pointer; font-weight: 600; margin-top: 0.6rem; }
+.private-text { white-space: pre-wrap; overflow-wrap: anywhere; background: var(--bg-card); border-radius: 12px; padding: 1rem; margin-top: 0.6rem; font-size: 0.85rem; max-height: 320px; overflow-y: auto; }
+.private-meta { font-size: 0.8rem; color: var(--text-muted); }
+.private-list { list-style: none; margin-top: 1rem; }
+.private-list li { padding: 0.8rem 0; border-top: 1px solid var(--border-light); }
+.link-btn { background: none; border: none; font: inherit; font-weight: 600; color: var(--text-pure); text-align: left; cursor: pointer; overflow-wrap: anywhere; }
+.link-btn:hover { text-decoration: underline; }
+.private-message { min-height: 1.6em; font-weight: 600; margin-bottom: 0.8rem; }
+.private-message.error { color: #c5221f; }
+.suggest-head { display: flex; justify-content: space-between; align-items: center; padding: 6px 14px; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); }
+.suggest-head button { background: none; border: none; font: inherit; color: var(--text-pure); cursor: pointer; text-decoration: underline; }
+.permission-box { background: #ffffff; border: 1px solid var(--text-pure); border-radius: 20px; padding: 1.5rem; margin-top: 1.25rem; line-height: 1.6; }
+.permission-box h3 { font-size: 1.15rem; font-weight: 800; margin-bottom: 0.4rem; }
+.permission-box input { width: 100%; font: inherit; padding: 0.7rem 1rem; border: 1px solid rgba(0,0,0,0.25); border-radius: 12px; margin: 0.8rem 0; }
+.permission-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.origin-tag { font-size: 0.72rem; font-weight: 700; border: 1px solid var(--border-light); border-radius: var(--radius-pill); padding: 2px 10px; margin-left: 8px; background: #ffffff; white-space: nowrap; }
+.origin-heading { font-size: 1.05rem; font-weight: 800; margin: 1.2rem 0 0.4rem; }
+.meta-pill select { font: inherit; border: none; background: transparent; color: inherit; cursor: pointer; }
+.source-text { white-space: pre-line; overflow-wrap: anywhere; }
+@media (max-width: 640px) {
+    .answer-hero-header { padding: 1.5rem; }
+    .header-inner { flex-wrap: wrap; gap: 0.8rem; }
+    .header-nav-links { gap: 1rem; order: 3; width: 100%; justify-content: space-between; }
+    .header-nav-links a { white-space: nowrap; }
+    .bento-grid > *, .bento-box { min-width: 0; }
+    .bento-box.hero-search-box, .bento-box.hero-cta-box { padding: 1.5rem; }
+    .bento-box.hero-cta-box { flex-wrap: wrap; gap: 1rem; }
+    .bento-box.hero-cta-box .btn-pill { margin-left: 0 !important; }
+    .text-massive { font-size: clamp(1.7rem, 8vw, 2.5rem) !important; }
+    .search-input { min-width: 0; }
+    .bento-trust-row { flex-wrap: wrap; }
+}
+.report-note { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-top: 4px; }
+.report-remark { background: #ffffff; border: 1px solid var(--border-light); border-radius: 14px; padding: 0.9rem 1.1rem; margin-bottom: 0.8rem; font-size: 0.9rem; line-height: 1.6; }

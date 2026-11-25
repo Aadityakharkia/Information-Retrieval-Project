@@ -26,6 +26,7 @@
       <nav class="header-nav-links">
         <a href="/">Home</a>
         <a href="/library">Library</a>
+        <a href="/my">My Health</a>
         <a href="/about">About</a>
       </nav>
 
@@ -46,6 +47,15 @@
       <div class="query-meta-tags" id="queryTags">
         <span class="meta-pill" id="tagRetriever">Retriever: HYBRID RRF</span>
         <span class="meta-pill" id="tagModel">Model: LLAMA 3.2</span>
+        <label class="meta-pill">Ranking:
+          <select id="linkMode" aria-label="Link analysis used for ranking">
+            <option value="both">PageRank + HITS</option>
+            <option value="pagerank">PageRank</option>
+            <option value="hits">HITS</option>
+            <option value="off">No link analysis</option>
+          </select>
+        </label>
+        <span class="meta-pill" id="tagMemory" hidden>Used your documents · stayed on this computer</span>
         <span class="meta-pill" id="tagStatus">Status: PROCESSING...</span>
       </div>
     </div>
@@ -109,9 +119,10 @@
 
         <!-- Sentence Container -->
         <div id="sentencesContainer"></div>
+        <div id="permissionContainer"></div>
 
         <div style="margin-top: 1.8rem; padding-top: 1rem; border-top: 1px solid var(--border-light); font-size: 0.85rem; color: var(--text-muted);">
-          ⚠️ Grounded directly in indexed MedQuAD evidence pages. Always consult a licensed medical professional for personal clinical care.
+          ⚠️ Each statement is labelled with where it came from. Never change a dose because of this page. Always consult a licensed medical professional for personal clinical care.
         </div>
       </div>
 
@@ -127,7 +138,7 @@
           Information Retrieval Inspector
         </h3>
         <p class="text-subtitle">
-          Side-by-side comparison of sparse keyword ranking (lnc.ltc), dense semantic embeddings (MiniLM), and Reciprocal Rank Fusion (RRF k=60).
+          Side-by-side comparison of sparse keyword ranking (lnc.ltc), dense semantic embeddings (MiniLM), Reciprocal Rank Fusion (RRF k=60), and link analysis over topics that mention each other.
         </p>
 
         <div class="inspector-grid">
@@ -142,6 +153,18 @@
           <div class="inspector-card">
             <h4>Fused Top-5 (Hybrid RRF k=60)</h4>
             <ul id="inspectorFusedList"></ul>
+          </div>
+          <div class="inspector-card">
+            <h4>Top PageRank (retrieved topics)</h4>
+            <ul id="inspectorPageRankList"></ul>
+          </div>
+          <div class="inspector-card">
+            <h4>HITS Authorities</h4>
+            <ul id="inspectorAuthorityList"></ul>
+          </div>
+          <div class="inspector-card">
+            <h4>HITS Hubs</h4>
+            <ul id="inspectorHubList"></ul>
           </div>
         </div>
       </div>
