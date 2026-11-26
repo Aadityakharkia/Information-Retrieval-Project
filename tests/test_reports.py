@@ -116,3 +116,36 @@ def test_low_value_never_pulls_in_a_disease_page(client, net):  # noqa: F811
     assert "Hemoglobin" in body["missing_medicines"]
     assert body["wikipedia_offer"]["query"] == body["missing_medicines"][0]  # the test name only, never the value
     assert net["get"] == []
+
+
+# --- column-layout lab reports (regression: results came back glued, "mill/mm34.07") -------
+def make_column_pdf(rows):
+    """Lab-style table: each cell placed at its own x position and drawn range -> unit -> value -> name,
+    the drawing order that makes plain text extraction glue them ("12.00 - 15.00 g/dL11.40")."""
+    ops, y = [], 700
+    for name, value, unit, rng in rows:
+        for x, txt in ((400, rng), (320, unit), (250, value), (50, name)):
+            ops.append(f"BT /F1 10 Tf 1 0 0 1 {x} {y} Tm ({txt}) Tj ET")
+        y -= 18
+    stream = "\n".join(ops).encode()
+    objs = [b"<< /Type /Catalog /Pages 2 0 R >>", b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+            b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>",
+            b"<< /Length %d >>\nstream\n%s\nendstream" % (len(stream), stream), b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"]
+    out, offs = b"%PDF-1.4\n", []
+    for i, o in enumerate(objs, 1):
+        offs.append(len(out)); out += b"%d 0 obj\n%s\nendobj\n" % (i, o)
+    xref = len(out)
+    out += b"xref\n0 6\n0000000000 65535 f \n" + b"".join(b"%010d 00000 n \n" % o for o in offs)
+    return out + b"trailer << /Size 6 /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF" % xref
+
+
+def test_column_layout_reports_keep_each_value_whole():
+    from backend.memory.prescription import extract_pdf
+    rows = [("Hemoglobin", "10.40", "g/dL", "12.00 - 15.00"), ("RBC Count", "4.07", "mill/mm3", "3.80 - 4.80"),
+            ("Total Leukocyte Count", "4.90", "thou/mm3", "4.00 - 10.00"), ("Platelet Count", "232", "thou/mm3", "150.00 - 410.00"),
+            ("Basophils", "0.50", "%", "<2.00")]
+    text, _ = extract_pdf(make_column_pdf(rows))
+    got = {r["name"]: (r["value"], r["status"]) for r in report.rows(text)}
+    assert got == {"Hemoglobin": ("10.40", "below"), "RBC Count": ("4.07", "within"), "Total Leukocyte Count": ("4.90", "within"),
+                   "Platelet Count": ("232", "within"), "Basophils": ("0.50", "within")}
+    assert "mm34.07" not in text and "mm34.90" not in text  # never glued unit + value

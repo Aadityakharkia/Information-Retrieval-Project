@@ -24,6 +24,21 @@ class PdfError(ValueError):
     """Message is safe to show to the user."""
 
 
+def _page_text(page) -> str:
+    """
+    Text of one page, read in LAYOUT mode: words are placed by their position, so each table row stays
+    on one line ("Hemoglobin 11.40 g/dL 12.00 - 15.00"). Plain mode follows the PDF's drawing order,
+    which for many lab reports (e.g. column layouts from large Indian labs) puts the method on its own
+    line and glues range, unit and result together ("12.00 - 15.00 g/dL11.40", "mill/mm34.07"), which
+    cannot be split safely. Falls back to plain mode if layout mode fails or finds nothing.
+    """
+    try:
+        t = page.extract_text(extraction_mode="layout") or ""
+    except Exception:
+        t = ""
+    return t if t.strip() else (page.extract_text() or "")
+
+
 def extract_pdf(data: bytes) -> Tuple[str, int]:
     """Returns (text, page_count). Raises PdfError for anything that is not a readable text PDF."""
     if not data.startswith(b"%PDF-"):
@@ -37,7 +52,7 @@ def extract_pdf(data: bytes) -> Tuple[str, int]:
             raise PdfError(f"This PDF has {pages} pages (maximum {config.MAX_PDF_PAGES}).")
         parts, size = [], 0
         for page in reader.pages:
-            t = page.extract_text() or ""
+            t = _page_text(page)
             parts.append(t)
             size += len(t)
             if size > config.MAX_DOC_CHARS:
@@ -47,7 +62,8 @@ def extract_pdf(data: bytes) -> Tuple[str, int]:
     except Exception as exc:  # malformed PDFs raise many different errors inside the parser
         raise PdfError("This PDF is damaged and could not be read.") from exc
     text = unicodedata.normalize("NFKC", "\n".join(parts)).replace("\x00", "")
-    text = "\n".join(line.strip() for line in text.splitlines() if line.strip())
+    # Layout mode pads columns with runs of spaces; one space is enough once each row is on its own line.
+    text = "\n".join(" ".join(line.split()) for line in text.splitlines() if line.strip())
     if sum(ch.isalnum() for ch in text) < 20:
         raise PdfError("No readable text found. Scanned or handwritten documents are not supported yet.")
     return text, pages
