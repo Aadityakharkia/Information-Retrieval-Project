@@ -87,19 +87,30 @@ class DenseRetriever:
             logger.warning(f"Failed to load dense embeddings cache: {e}")
             return False
 
+    def encode_query(self, query: str) -> np.ndarray:
+        return self._get_model().encode([query], convert_to_numpy=True, normalize_embeddings=True).astype(np.float32)[0]
+
+    def vector_of(self, chunk_id: str) -> Optional[np.ndarray]:
+        """Stored (normalised) embedding of one passage, used by Rocchio feedback."""
+        if self.embeddings is None:
+            return None
+        if not hasattr(self, "_row") or len(self._row) != len(self.chunk_ids):
+            self._row = {cid: i for i, cid in enumerate(self.chunk_ids)}
+        i = self._row.get(chunk_id)
+        return None if i is None else np.asarray(self.embeddings[i], dtype=np.float32)
+
     def search(self, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
         """
         Executes Dense Cosine Similarity search using matrix multiplication.
         """
         if self.embeddings is None or len(self.chunk_ids) == 0:
             return []
+        return self.search_vector(self.encode_query(query), top_k)
 
-        model = self._get_model()
-        q_emb = model.encode(
-            [query],
-            convert_to_numpy=True,
-            normalize_embeddings=True
-        ).astype(np.float32)[0]
+    def search_vector(self, q_emb: np.ndarray, top_k: int = 5) -> List[Dict[str, Any]]:
+        """Cosine search with a ready-made normalised query embedding (e.g. from Rocchio feedback)."""
+        if self.embeddings is None or len(self.chunk_ids) == 0:
+            return []
 
         # Dot product of normalized vectors = Cosine Similarity
         cosine_scores = np.matmul(self.embeddings, q_emb)

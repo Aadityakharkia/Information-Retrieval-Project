@@ -1,0 +1,85 @@
+{
+ "setup": "hybrid + lexicon + link_mode=both",
+ "prf": {
+  "dev_grid": {
+   "beta=0.25,gate=0.45": 0.3169,
+   "beta=0.25,gate=0.55": 0.3152,
+   "beta=0.25,gate=0.65": 0.306,
+   "beta=0.5,gate=0.45": 0.3183,
+   "beta=0.5,gate=0.55": 0.3164,
+   "beta=0.5,gate=0.65": 0.3087,
+   "beta=0.75,gate=0.45": 0.3219,
+   "beta=0.75,gate=0.55": 0.319,
+   "beta=0.75,gate=0.65": 0.3068
+  },
+  "dev_no_feedback": 0.297,
+  "chosen": {
+   "beta": 0.75,
+   "gate": 0.45
+  },
+  "test_no_feedback": {
+   "en": 0.3581,
+   "hinglish": 0.3361,
+   "hindi": 0.2955
+  },
+  "test_prf": {
+   "en": 0.3562,
+   "hinglish": 0.3605,
+   "hindi": 0.2941
+  },
+  "test_mean": [
+   0.3299,
+   0.3369
+  ],
+  "diff": 0.007,
+  "p": 0.5092,
+  "helped_hurt_same": [
+   10,
+   8,
+   2
+  ]
+ },
+ "explicit": {
+  "en": {
+   "queries": 40,
+   "with_a_relevant_mark": 26,
+   "residual_ndcg_before": 0.2899,
+   "residual_ndcg_after": 0.3891,
+   "p": 0.0115
+  },
+  "hinglish": {
+   "queries": 39,
+   "with_a_relevant_mark": 23,
+   "residual_ndcg_before": 0.2905,
+   "residual_ndcg_after": 0.3789,
+   "p": 0.0014
+  },
+  "hindi": {
+   "queries": 40,
+   "with_a_relevant_mark": 20,
+   "residual_ndcg_before": 0.2428,
+   "residual_ndcg_after": 0.3284,
+   "p": 0.0004
+  },
+  "all": {
+   "queries": 119,
+   "before": 0.2743,
+   "after": 0.3654,
+   "p": 0.0
+  }
+ },
+ "abstention": {
+  "no_feedback": {
+   "en": 1,
+   "hinglish": 25,
+   "hindi": 37,
+   "off_topic_abstained": 20
+  },
+  "prf": {
+   "en": 3,
+   "hinglish": 25,
+   "hindi": 37,
+   "off_topic_abstained": 20
+  }
+ }
+}

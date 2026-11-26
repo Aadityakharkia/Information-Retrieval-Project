@@ -288,3 +288,54 @@ def test_decimal_doses_are_not_split():
     assert split_into_sentences("Take Metformin 2.5 mg daily [1]. Maximum 4.5 g [2].") == ["Take Metformin 2.5 mg daily [1].", "Maximum 4.5 g [2]."]
     msg = [{"role": "user", "content": "Context Pages:\n[1] Reference Page 1 (ID: x)\nQuestion: q\nContent: The usual metformin dose is 2.5 mg daily for adults.\n\n\nUser Health Question: metformin dose\n\nInstructions: x"}]
     assert "2.5 mg daily" in llm_client.generate_mock_rag_answer(msg)
+
+
+# --- related topics -------------------------------------------------------------------
+def test_related_topics_under_database_answers(client):
+    body = ask(client, "how to prevent osteoporosis")
+    names = [r["name"].lower() for r in body["related"]]
+    assert body["status"] == "answered" and 1 <= len(names) <= config.RELATED_COUNT
+    assert all(r["question"].startswith("What is ") for r in body["related"])
+    assert "osteoporosis" not in names and "blood" not in names
+
+
+def test_related_topics_follow_the_cited_passages_only(client):
+    # the curated paracetamol page is not part of the topic graph, so nothing unrelated may be suggested
+    body = ask(client, "what is the recommended dosage for paracetamol in adults")
+    assert not any("blood pressure" in r["name"].lower() for r in body["related"])
+
+
+def test_no_related_topics_when_not_answered_from_the_database(client, net):
+    assert ask(client, "what is the capital of France")["related"] == []
+    upload(client)
+    assert ask(client, "what medicines did my doctor prescribe")["related"] == []
+    assert ask(client, "I want to kill myself")["related"] == []
+
+
+# --- Rocchio feedback through the API ------------------------------------------------------
+def test_explicit_feedback_refines_and_hides_not_relevant(client, private_store):
+    first = ask(client, "what are the symptoms of diabetes")
+    ids = [s["chunk_id"] for s in first["sources"]]
+    body = ask(client, "what are the symptoms of diabetes", feedback={"relevant": ids[:1], "non_relevant": ids[1:2]}, save_history=False)
+    fb = body["inspector"]["feedback"]
+    assert fb["applied"] and fb["mode"] == "explicit" and fb["added_terms"]
+    assert ids[1] not in [s["chunk_id"] for s in body["sources"]]
+    assert [h["query"] for h in client.get("/api/history").get_json()["history"]] == ["what are the symptoms of diabetes"]
+
+
+def test_feedback_never_rescues_an_off_topic_question(client):
+    any_id = ask(client, "what are the symptoms of diabetes")["sources"][0]["chunk_id"]
+    body = ask(client, "what is the capital of France", feedback={"relevant": [any_id], "non_relevant": []})
+    assert body["status"] == "abstained"
+
+
+@pytest.mark.parametrize("fb", [{"relevant": ["nope"]}, {"relevant": "x"}, [1], {"relevant": ["qa_00001_c0"], "non_relevant": ["qa_00001_c0"]},
+                                {"relevant": [f"qa_{i}_c0" for i in range(1, 12)], "non_relevant": []}])
+def test_bad_feedback_is_rejected(client, fb):
+    assert client.post("/api/ask", json={"question": "diabetes", "feedback": fb}).status_code == 400
+
+
+def test_pseudo_feedback_is_off_by_default_and_optional(client):
+    assert ask(client, "what are the symptoms of diabetes")["inspector"]["feedback"]["applied"] is False
+    body = ask(client, "what are the symptoms of diabetes", pseudo_feedback=True)
+    assert body["inspector"]["feedback"]["mode"] == "pseudo"

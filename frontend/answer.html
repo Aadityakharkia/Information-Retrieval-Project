@@ -55,6 +55,7 @@
             <option value="off">No link analysis</option>
           </select>
         </label>
+        <span class="meta-pill" id="tagFeedback" hidden>Refined with your feedback</span>
         <span class="meta-pill" id="tagMemory" hidden>Used your documents · stayed on this computer</span>
         <span class="meta-pill" id="tagStatus">Status: PROCESSING...</span>
       </div>
@@ -119,6 +120,7 @@
 
         <!-- Sentence Container -->
         <div id="sentencesContainer"></div>
+        <nav id="relatedTopics" class="related-line" aria-label="Related topics" hidden></nav>
         <div id="permissionContainer"></div>
 
         <div style="margin-top: 1.8rem; padding-top: 1rem; border-top: 1px solid var(--border-light); font-size: 0.85rem; color: var(--text-muted);">
@@ -129,7 +131,13 @@
       <!-- Reference Context Pages (Sources) -->
       <div style="margin-top: 3rem;">
         <h2 class="text-massive" style="font-size: 2rem; margin-bottom: 1.5rem;">Reference Context Pages</h2>
+        <div id="feedbackBar" class="feedback-bar" role="status" aria-live="polite" hidden>
+          <span id="feedbackCount"></span>
+          <button type="button" class="btn-pill btn-outline btn-small" id="btnRefine">Refine results</button>
+          <button type="button" class="link-btn" id="btnClearMarks">Clear</button>
+        </div>
         <div id="sourcesContainer"></div>
+        <p id="inspectorFeedback" class="private-meta" style="margin-top:0.5rem;"></p>
       </div>
 
       <!-- Deep IR Inspector 3-Col Grid -->
@@ -167,6 +175,7 @@
             <ul id="inspectorHubList"></ul>
           </div>
         </div>
+        <p id="inspectorRelated" class="private-meta" style="margin-top:1rem;"></p>
       </div>
     </section>
   </main>

@@ -20,6 +20,7 @@ from backend.ir.bm25 import BM25Retriever
 from backend.ir.dense import DenseRetriever
 from backend.ir.hybrid import HybridRetriever
 from backend.ir.linkgraph import LinkGraph, topic_of
+from backend.ir import rocchio
 from backend.rag.abstain import evaluate_abstention
 from backend.rag.generator import generate_answer
 from backend.rag.checker import verify_all_sentences
@@ -78,24 +79,96 @@ class HealthNestPipeline:
     # ------------------------------------------------------------------
     # Retrieval helpers
     # ------------------------------------------------------------------
-    def _retrieve(self, expanded_q: str, retriever_type: str, top_k: int, link_mode: str,
-                  use_champion_lists: bool = False) -> Tuple[list, list, list, dict]:
-        """Returns (results, sparse_results, dense_results, link_info); results are link re-ranked and cut to top_k."""
-        depth = top_k if link_mode == "off" else max(config.LINK_POOL, top_k)
-        sparse_res, dense_res = [], []
+    def _search(self, expanded_q: str, retriever_type: str, depth: int, fuse_depth: int, use_champion_lists: bool,
+                q_weights: Optional[Dict[str, float]] = None, q_vec=None) -> Tuple[list, list, list]:
+        """One retrieval pass. q_weights / q_vec, when given, replace the query string (Rocchio feedback)."""
+        tfidf = TfIdfRetriever(self.index)
+
+        def sparse(k):
+            return tfidf.search_weighted(q_weights, top_k=k) if q_weights else tfidf.search(expanded_q, top_k=k, use_champion_lists=use_champion_lists)
+
+        def dense(k):
+            return self.dense_retriever.search_vector(q_vec, top_k=k) if q_vec is not None else self.dense_retriever.search(expanded_q, top_k=k)
+
         if retriever_type == "sparse":
-            sparse_res = results = TfIdfRetriever(self.index).search(expanded_q, top_k=depth, use_champion_lists=use_champion_lists)
-        elif retriever_type == "bm25":
-            sparse_res = results = BM25Retriever(self.index).search(expanded_q, top_k=depth)
-        elif retriever_type == "dense":
-            dense_res = results = self.dense_retriever.search(expanded_q, top_k=depth)
-        else:
-            fuse_depth = max(top_k * 2, depth)
-            sparse_res = TfIdfRetriever(self.index).search(expanded_q, top_k=fuse_depth, use_champion_lists=use_champion_lists)
-            dense_res = self.dense_retriever.search(expanded_q, top_k=fuse_depth)
-            results = HybridRetriever().fuse(sparse_res, dense_res, top_k=depth, fusion_method="rrf")
+            res = sparse(depth)
+            return res, [], res
+        if retriever_type == "bm25":
+            res = BM25Retriever(self.index).search(expanded_q, top_k=depth)
+            return res, [], res
+        if retriever_type == "dense":
+            res = dense(depth)
+            return [], res, res
+        sparse_res, dense_res = sparse(fuse_depth), dense(fuse_depth)
+        return sparse_res, dense_res, HybridRetriever().fuse(sparse_res, dense_res, top_k=depth, fusion_method="rrf")
+
+    def _retrieve(self, expanded_q: str, retriever_type: str, top_k: int, link_mode: str,
+                  use_champion_lists: bool = False, feedback: Optional[Dict[str, Any]] = None) -> Tuple[list, list, list, dict, dict]:
+        """
+        Returns (results, sparse_results, dense_results, link_info, feedback_info).
+        Results are (optionally) Rocchio re-searched, link re-ranked and cut to top_k.
+
+        feedback = {"relevant": [chunk ids], "non_relevant": [chunk ids]}  explicit marks from the user, or
+                   {"pseudo": True}  assume the first search's top results are relevant (only if it was confident).
+        feedback_info["first_dense_top"] is the best dense cosine of the FIRST search: the off-topic check
+        uses it, so feedback can never turn a weak search into a confident-looking one.
+        """
+        depth = top_k if link_mode == "off" else max(config.LINK_POOL, top_k)
+        fuse_depth = max(top_k * 2, depth)
+        sparse_res, dense_res, results = self._search(expanded_q, retriever_type, depth, fuse_depth, use_champion_lists)
+        info: Dict[str, Any] = {"applied": False, "first_dense_top": dense_res[0]["score"] if dense_res else None}
+        if feedback:
+            relevant, non_relevant = list(feedback.get("relevant", [])), list(feedback.get("non_relevant", []))
+            info["mode"] = "explicit" if (relevant or non_relevant) else "pseudo"
+            if retriever_type == "bm25":
+                info["reason"] = "Feedback is not used with BM25 (no query vector)."
+            elif info["mode"] == "pseudo":
+                gate = info["first_dense_top"]
+                if gate is None:
+                    gate = float(self.dense_retriever.encode_query(expanded_q) @ self.dense_retriever.vector_of(results[0]["chunk_id"])) if results else 0.0
+                if gate >= config.ROCCHIO_PRF_MIN_DENSE:
+                    relevant = [r["chunk_id"] for r in results[:config.ROCCHIO_PRF_DOCS]]
+                else:
+                    info["reason"] = f"First search not confident enough ({gate:.2f} < {config.ROCCHIO_PRF_MIN_DENSE})."
+            if relevant or non_relevant:
+                text = lambda cid: f"{self.index.chunks_map[cid]['question']} {self.index.chunks_map[cid]['text']}"
+                q_weights, added = rocchio.sparse_query(expanded_q, [text(c) for c in relevant], [text(c) for c in non_relevant], self.index)
+                vec = lambda ids: [v for v in (self.dense_retriever.vector_of(c) for c in ids) if v is not None]
+                q_vec = rocchio.dense_query(self.dense_retriever.encode_query(expanded_q), vec(relevant), vec(non_relevant))
+                sparse_res, dense_res, results = self._search(expanded_q, retriever_type, depth + len(non_relevant),
+                                                              fuse_depth + len(non_relevant), use_champion_lists, q_weights, q_vec)
+                # Passages the user called "Not relevant" are not shown again for this search.
+                drop = set(non_relevant)
+                results = [r for r in results if r["chunk_id"] not in drop][:depth]
+                info.update(applied=True, relevant=relevant, non_relevant=non_relevant, added_terms=added)
         results, link_info = self.link_graph.rerank(results, link_mode)
-        return results[:top_k], sparse_res, dense_res, link_info
+        return results[:top_k], sparse_res, dense_res, link_info, info
+
+    def _related(self, results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Related topics shown under a database answer (method: LinkGraph.related in backend/ir/linkgraph.py).
+        `results` are only the passages the answer cites, in citation order; each one's topic becomes a
+        seed weighted 1/rank, so the first cited page counts most. Only called for answers from the
+        HealthNest database: never for prescriptions/reports (private), Wikipedia (not in the graph),
+        "I don't know" answers or crisis searches.
+        """
+        seeds: Dict[str, float] = {}
+        for rank, r in enumerate(results, 1):
+            t = self.link_graph.topic_by_title.get(r["chunk"]["question"])
+            if t:
+                seeds[t] = seeds.get(t, 0.0) + 1.0 / rank
+        model = self.dense_retriever._get_model()
+
+        # Meaning check used by LinkGraph.related: cosine between topic names with the same dense model
+        # that search uses (multilingual MiniLM), so no extra model is loaded.
+        def similarity(main: str, names: List[str]) -> List[float]:
+            v = model.encode([main] + names, normalize_embeddings=True, convert_to_numpy=True, show_progress_bar=False)
+            return [float(x @ v[0]) for x in v[1:]]
+        related = self.link_graph.related(seeds, similarity=similarity)
+        # Clicking a related topic asks this question; it matches the corpus' "What is (are) X ?" pages.
+        for r in related:
+            r["question"] = f"What is {r['name']}?"
+        return related
 
     @staticmethod
     def _source(n: int, item: Dict[str, Any], origin: str = "database") -> Dict[str, Any]:
@@ -165,6 +238,8 @@ class HealthNestPipeline:
         link_mode: str = config.LINK_DEFAULT_MODE,  # "off", "pagerank", "hits", "both"
         patient_docs: Optional[List[Dict[str, Any]]] = None,
         wiki_query: Optional[str] = None,  # set only after the user approved this exact term
+        feedback: Optional[Dict[str, List[str]]] = None,  # explicit Rocchio marks {"relevant": [...], "non_relevant": [...]}
+        pseudo_feedback: bool = config.PRF_DEFAULT,  # automatic Rocchio from the first search's top results
     ) -> Dict[str, Any]:
         """
         Executes the complete RAG Q&A pipeline:
@@ -199,6 +274,7 @@ class HealthNestPipeline:
             "model": model,
             "memory_used": False,
             "wikipedia_offer": None,
+            "related": [],
         }
 
         if safety["is_self_harm"]:
@@ -218,18 +294,20 @@ class HealthNestPipeline:
         elif memory["used"]:
             result = self._ask_memory(question, memory, base, answered, retriever_type, model, link_mode, enable_checker)
         else:
+            fb = feedback if (feedback and (feedback.get("relevant") or feedback.get("non_relevant"))) else ({"pseudo": True} if pseudo_feedback else None)
             result = self._ask_database(question, base, answered, retriever_type, top_k, model, link_mode,
-                                        enable_abstain, enable_checker, use_champion_lists, lap)
+                                        enable_abstain, enable_checker, use_champion_lists, lap, fb)
         lap("total_ms", start_time)
         return result
 
     def _ask_database(self, question, base, answered, retriever_type, top_k, model, link_mode,
-                      enable_abstain, enable_checker, use_champion_lists, lap) -> Dict[str, Any]:
+                      enable_abstain, enable_checker, use_champion_lists, lap, feedback=None) -> Dict[str, Any]:
         expanded_q, added_terms = self.hinglish_expander.expand_query(question)
         concept_groups = self.hinglish_expander.get_concept_groups(question)
 
         t0 = time.time()
-        results, sparse_res, dense_res, link_info = self._retrieve(expanded_q, retriever_type, top_k, link_mode, use_champion_lists)
+        results, sparse_res, dense_res, link_info, fb_info = self._retrieve(expanded_q, retriever_type, top_k, link_mode,
+                                                                            use_champion_lists, feedback)
         lap("retrieval_ms", t0)
         sources = [self._source(i, item) for i, item in enumerate(results, 1)]
         out = {
@@ -242,12 +320,13 @@ class HealthNestPipeline:
                 "dense_top5": [d["chunk"]["chunk_id"] for d in dense_res[:5]],
                 "fused_top5": [s["chunk_id"] for s in sources[:5]],
                 "link_analysis": link_info,
+                "feedback": fb_info,
             },
         }
 
         t0 = time.time()
         decision = evaluate_abstention(question, results, added_terms=added_terms, concept_groups=concept_groups,
-                                       dense_top_score=dense_res[0]["score"] if dense_res else None)
+                                       dense_top_score=fb_info["first_dense_top"])
         lap("abstain_ms", t0)
         out["abstain"] = decision
         offer = self._wikipedia_offer(self._search_term(question))
@@ -261,7 +340,11 @@ class HealthNestPipeline:
         if sentences is None:
             out["abstain"] = {**decision, "should_abstain": True, "reason": "LLM indicated insufficient reference evidence."}
             return {**out, "status": "abstained", "wikipedia_offer": offer}
-        return {**out, "status": answered, "sentences": sentences}
+        t0 = time.time()
+        cited = sorted({c for sent in sentences for c in sent["citations"] if 1 <= c <= len(results)})
+        related = self._related([results[c - 1] for c in cited])  # only what the answer actually used
+        lap("related_ms", t0)
+        return {**out, "status": answered, "sentences": sentences, "related": related}
 
     def _ask_memory(self, question, memory, base, answered, retriever_type, model, link_mode, enable_checker) -> Dict[str, Any]:
         """Prescription lines verbatim, then (if general knowledge is asked for) what the database knows about each medicine."""
@@ -287,7 +370,7 @@ class HealthNestPipeline:
                 is_test = memory["topic_kind"] == "test"
                 lookup = med if is_test else prescription.lookup_query(question, med)
                 expanded, _ = self.hinglish_expander.expand_query(lookup)
-                results, _, _, med_links = self._retrieve(expanded, retriever_type, MAX_TOP_K, link_mode)
+                results, _, _, med_links, _ = self._retrieve(expanded, retriever_type, MAX_TOP_K, link_mode)
                 # A passage counts only if it actually names this medicine or test.
                 hits_ = [r for r in results if stems & set(tokenize(f"{r['chunk']['question']} {r['chunk']['text']}"))]
                 if is_test:

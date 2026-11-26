@@ -132,3 +132,43 @@ class TfIdfRetriever:
             })
 
         return results
+
+
+    def search_weighted(self, q_weights: Dict[str, float], top_k: int = 5,
+                        zone_weights: Dict[str, float] = config.ZONE_WEIGHTS) -> List[Dict[str, Any]]:
+        """
+        Cosine search with a ready-made query vector {term: weight} (e.g. from Rocchio feedback)
+        instead of a query string. Same TAAT accumulators and zone weighting as search().
+        """
+        q_weights = {t: w for t, w in q_weights.items() if w > 0}
+        if not q_weights or self.index.N == 0:
+            return []
+        zone_acc: Dict[str, Dict[str, float]] = {z: defaultdict(float) for z in self.index.zones}
+        matched: Dict[str, Set[str]] = defaultdict(set)
+        for zone_name, zone_index in self.index.zones.items():
+            acc = zone_acc[zone_name]
+            q_norm_sq = 0.0
+            for term, q_wt in q_weights.items():
+                postings = zone_index.postings.get(term)
+                if not postings:
+                    continue
+                q_norm_sq += q_wt * q_wt
+                for chunk_id, d_tf in postings:
+                    acc[chunk_id] += q_wt * (1.0 + math.log(d_tf))
+                    matched[chunk_id].add(term)
+            q_norm = math.sqrt(q_norm_sq)
+            if q_norm > 0:
+                for chunk_id in acc:
+                    d_norm = zone_index.doc_norms.get(chunk_id, 1.0)
+                    acc[chunk_id] = acc[chunk_id] / (q_norm * d_norm) if d_norm > 0 else 0.0
+        scores = {}
+        for cid in set().union(*(a.keys() for a in zone_acc.values())):
+            scores[cid] = sum(w * zone_acc[z].get(cid, 0.0) for z, w in zone_weights.items())
+        results = []
+        for rank, (cid, score) in enumerate(heapq.nlargest(top_k, scores.items(), key=lambda x: x[1]), start=1):
+            if score <= 0:
+                continue
+            results.append({"chunk_id": cid, "score": round(score, 4), "rank": rank,
+                            "zone_scores": {z: round(zone_acc[z].get(cid, 0.0), 4) for z in self.index.zones},
+                            "matched_terms": sorted(matched[cid]), "chunk": self.index.chunks_map[cid]})
+        return results

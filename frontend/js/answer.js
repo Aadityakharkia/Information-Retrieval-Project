@@ -2,7 +2,7 @@
  * Dedicated Answer Page Logic (answer.js).
  */
 
-import { askQuestion } from "./api.js";
+import { askQuestion, openAnswer } from "./api.js";
 
 const escapeHtml = (value) =>
   String(value ?? "").replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
@@ -51,6 +51,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!urlParams.get("q")) sessionStorage.setItem("hn_question", question);
     window.location.reload();
   });
+
+  // Rocchio feedback marks for the sources on screen: chunk_id -> "relevant" | "non_relevant".
+  // Declared before the first answer is drawn, because renderAnswerData() resets it.
+  const marks = new Map();
 
   const payload = {
     question,
@@ -123,6 +127,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     const engine = GENERATOR_LABELS[data.generator];
     tagModel.textContent = data.local_only ? `Model: ${engine || "local"} (this computer)` : engine ? `Model: ${data.model} (${engine})` : `Model: ${data.model}`;
     tagMemory.hidden = !data.memory_used;
+    const fb = (data.inspector && data.inspector.feedback) || {};
+    document.getElementById("tagFeedback").hidden = !(fb.applied && fb.mode === "explicit");
+    document.getElementById("inspectorFeedback").textContent = fb.applied
+      ? `Rocchio feedback (${fb.mode}): ${fb.relevant.length} relevant, ${fb.non_relevant.length} not relevant` +
+        (fb.added_terms && fb.added_terms.length ? `; words added to the search: ${fb.added_terms.join(", ")}` : "")
+      : "";
+    marks.clear();
+    updateFeedbackBar();
+    renderRelated(data.related || []);
     renderPermission(data);
 
     // Emergency Banner
@@ -258,6 +271,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             <span>Matched Terms: ${src.matched_terms && src.matched_terms.length ? escapeHtml(src.matched_terms.join(", ")) : "N/A"}</span>
           </div>`}
         `;
+        if (src.origin === "database" && src.chunk_id) srcDiv.appendChild(feedbackButtons(src.chunk_id));
         sourcesContainer.appendChild(srcDiv);
       });
     }
@@ -275,6 +289,99 @@ document.addEventListener("DOMContentLoaded", async () => {
       document.getElementById("inspectorAuthorityList").innerHTML = rows(links.top_authorities || wiki("authority"));
       document.getElementById("inspectorHubList").innerHTML = rows(links.top_hubs || wiki("hub"));
     }
+  }
+
+  /**
+   * Rocchio relevance feedback ("More like this" / "Not relevant" on each database source).
+   * Marks are kept only in this page; "Refine results" asks the same question again with them, and the
+   * server moves the query towards the marked-relevant passages and away from the others
+   * (backend/ir/rocchio.py). Passages marked "Not relevant" are not shown again. Nothing is stored,
+   * and the refined search is not added to the search history a second time.
+   * Simulated on the evaluation questions this raised nDCG@10 on unseen results from 0.27 to 0.38
+   * (eval/model_comparison/rocchio_results.json).
+   */
+
+  function feedbackButtons(chunkId) {
+    const row = document.createElement("div");
+    row.className = "feedback-row";
+    [["relevant", "More like this"], ["non_relevant", "Not relevant"]].forEach(([kind, label]) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "feedback-btn";
+      b.textContent = label;
+      b.dataset.kind = kind;
+      b.setAttribute("aria-pressed", "false");
+      b.addEventListener("click", () => {
+        if (marks.get(chunkId) === kind) marks.delete(chunkId);
+        else marks.set(chunkId, kind);
+        row.querySelectorAll(".feedback-btn").forEach((x) => x.setAttribute("aria-pressed", String(marks.get(chunkId) === x.dataset.kind)));
+        updateFeedbackBar();
+      });
+      row.appendChild(b);
+    });
+    return row;
+  }
+
+  function updateFeedbackBar() {
+    const bar = document.getElementById("feedbackBar");
+    bar.hidden = marks.size === 0;
+    const rel = [...marks.values()].filter((k) => k === "relevant").length;
+    document.getElementById("feedbackCount").textContent =
+      `${rel} marked useful, ${marks.size - rel} marked not relevant`;
+  }
+
+  document.getElementById("btnClearMarks").addEventListener("click", () => {
+    marks.clear();
+    document.querySelectorAll(".feedback-btn").forEach((x) => x.setAttribute("aria-pressed", "false"));
+    updateFeedbackBar();
+  });
+
+  document.getElementById("btnRefine").addEventListener("click", async (e) => {
+    const feedback = { relevant: [], non_relevant: [] };
+    marks.forEach((kind, id) => feedback[kind].push(id));
+    e.target.disabled = true;
+    e.target.textContent = "Refining…";
+    try {
+      renderAnswerData(await askQuestion({ ...payload, feedback, save_history: false }));
+      document.getElementById("answerCard").scrollIntoView({ behavior: "smooth", block: "start" });
+    } catch (err) {
+      document.getElementById("feedbackCount").textContent = err.message;
+    } finally {
+      e.target.disabled = false;
+      e.target.textContent = "Refine results";
+    }
+  });
+
+  /**
+   * One quiet line of related topics under the answer ("Related: A · B · C").
+   * The server picks them with topic-sensitive PageRank over the topic link graph (backend/ir/linkgraph.py).
+   * Hovering a topic shows which answer topic it was linked from. Clicking asks "What is <topic>?"
+   * through sessionStorage, so the question does not appear in the address bar.
+   * The IR Inspector gets one extra line explaining each choice (mutual or one-way link, lift score).
+   * Nothing is shown when the server returns no topics.
+   */
+  function renderRelated(related) {
+    const nav = document.getElementById("relatedTopics");
+    const note = document.getElementById("inspectorRelated");
+    nav.replaceChildren();
+    nav.hidden = !related.length;
+    note.textContent = related.length
+      ? `Related topics (topic-sensitive PageRank): ${related.map((r) => `${r.name} – ${r.link === "mutual" ? "pages mention each other" : "mentioned by this answer's page"}, lift ${r.lift}`).join("; ")}`
+      : "";
+    if (!related.length) return;
+    nav.append("Related: ");
+    related.forEach((r, i) => {
+      if (i) nav.append(" · ");
+      const a = document.createElement("a");
+      a.href = "/answer";
+      a.textContent = r.name;
+      a.title = r.via.length ? `Linked from ${r.via.join(" and ")}` : "Linked topic";
+      a.addEventListener("click", (e) => {
+        e.preventDefault();
+        openAnswer(r.question);
+      });
+      nav.append(a);
+    });
   }
 
   /** Asks before anything is sent to Wikipedia; the user sees and can edit the exact words. */

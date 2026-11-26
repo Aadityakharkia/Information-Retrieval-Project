@@ -91,6 +91,32 @@ LINK_DEFAULT_MODE = "both"
 LINK_WEIGHT = 0.20             # share of link evidence in the final ordering
 LINK_POOL = 20                 # candidates re-ranked before cutting to top_k
 
+# Related topics under an answer (topic-sensitive PageRank, see LinkGraph.related for the full method).
+# These values were chosen by inspecting about 20 real questions, not by a benchmark:
+#  - raising the similarity bars gives fewer but tighter suggestions (some answers then show none);
+#  - lowering them fills more answers but lets in loose links (asthma -> preeclampsia at 0.29).
+RELATED_COUNT = 3              # topics shown under an answer
+RELATED_MIN_INDEGREE = 3       # mentioned by at least this many other topics (skips obscure rare diseases)
+RELATED_MAX_INDEGREE_PCTL = 99 # drop the most-linked 1% (generic: blood, surgery, pain, medicines...)
+RELATED_ONE_WAY_POOL = 12      # best candidates of each kind (by lift) checked for meaning similarity
+RELATED_MIN_SIMILARITY = 0.35  # dense cosine between the answer's topic and a one-way candidate
+RELATED_MIN_SIMILARITY_MUTUAL = 0.30  # ... and a mutual candidate (lower: mutual links are stronger evidence)
+
+# Rocchio relevance feedback (backend/ir/rocchio.py). alpha/beta/gamma: textbook values (IIR ch. 9).
+ROCCHIO_ALPHA = 1.0
+ROCCHIO_BETA = 0.75
+ROCCHIO_GAMMA = 0.15
+ROCCHIO_MAX_NEW_TERMS = 10      # new words added to the sparse query
+ROCCHIO_MIN_NEW_TERM_DF = 5     # a new word must occur in at least this many passages (drops "rith" from "ah-RITH-me-ahs")
+ROCCHIO_MAX_MARKS = 10          # explicit feedback: passages a user can mark per search
+# Pseudo-relevance feedback (no clicks): assume the top ROCCHIO_PRF_DOCS results are relevant, but only
+# when the first search was confident (best dense cosine >= ROCCHIO_PRF_MIN_DENSE), to avoid query drift.
+# Off: on held-out questions nDCG@10 moved 0.330 -> 0.337 (p = 0.51, not significant), English got slightly
+# worse and 2 more English questions got "I don't know" (eval/model_comparison/rocchio_results.json).
+PRF_DEFAULT = False
+ROCCHIO_PRF_DOCS = 3
+ROCCHIO_PRF_MIN_DENSE = 0.45      # best value on the dev half (0.45 / 0.55 / 0.65 tried)
+
 # RAG & LLM Configuration
 # Provider order: Groq (if GROQ_API_KEY set) -> local Ollama -> offline extractive mock.
 # Ollama model tags contain ':' (e.g. llama3.2:1b); Groq model ids do not.

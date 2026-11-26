@@ -48,3 +48,6 @@ data/train.csv
 
 # Private patient memory - never commit
 data/private/
+
+# IDE / Tool configs
+.claude/

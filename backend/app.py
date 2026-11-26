@@ -129,6 +129,18 @@ def api_ask():
         if not wiki_query or len(wiki_query) > 120:
             return _error("Field 'wikipedia_query' (1-120 characters) is required when 'allow_wikipedia' is true.")
 
+    # Rocchio relevance feedback: chunk ids the user marked on the previous results of this question.
+    feedback = data.get("feedback")
+    if feedback is not None:
+        marks = [] if not isinstance(feedback, dict) else [feedback.get(k, []) for k in ("relevant", "non_relevant")]
+        pipeline.initialize()
+        if (len(marks) != 2 or not all(isinstance(m, list) and all(isinstance(c, str) for c in m) for m in marks)
+                or sum(map(len, marks)) > config.ROCCHIO_MAX_MARKS or set(marks[0]) & set(marks[1])
+                or any(c not in pipeline.index.chunks_map for m in marks for c in m)):
+            return _error(f"Field 'feedback' must be {{relevant: [...], non_relevant: [...]}} with up to "
+                          f"{config.ROCCHIO_MAX_MARKS} known passage ids, none in both lists.")
+        feedback = {"relevant": marks[0], "non_relevant": marks[1]}
+
     model = data.get("model") or config.DEFAULT_MODEL
     pid = _current_patient(create=True)
     try:
@@ -143,6 +155,8 @@ def api_ask():
             link_mode=link_mode,
             patient_docs=store.documents(pid) if data.get("use_memory", True) else None,
             wiki_query=wiki_query,
+            feedback=feedback,
+            pseudo_feedback=bool(data.get("pseudo_feedback", config.PRF_DEFAULT)),
         )
         # Crisis searches are never kept in the history.
         if result["status"] != "self_harm" and data.get("save_history", True):

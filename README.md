@@ -6,7 +6,7 @@ and the system says *"I don't know"* when the evidence is weak.
 
 ```
 question ─► safety guard ─► patient's own prescription? ─► Hinglish expansion ─► retrieval (TF-IDF · BM25 · dense · hybrid RRF)
-         ─► PageRank + HITS re-ranking
+         ─► (Rocchio feedback re-search) ─► PageRank + HITS re-ranking ─► related topics (topic-sensitive PageRank)
          ─► abstention gate ─► LLM answer with [n] citations ─► sentence-level fact check ─► UI
               └─► no evidence: ask permission ─► Wikipedia
 ```
@@ -55,7 +55,7 @@ config.py           all tunable parameters and paths
 
 | Method | Path | Purpose |
 |---|---|---|
-| POST | `/api/ask` | `{question, retriever?, top_k?, model?, enable_abstain?, enable_checker?, link_mode?, use_memory?, allow_wikipedia?, wikipedia_query?}` → answer, sentences + citations + support badges, sources, retrieval inspector, timings |
+| POST | `/api/ask` | `{question, retriever?, top_k?, model?, enable_abstain?, enable_checker?, link_mode?, use_memory?, allow_wikipedia?, wikipedia_query?, feedback?, pseudo_feedback?, save_history?}` → answer, sentences + citations + support badges, sources, retrieval inspector, timings |
 | GET | `/api/suggest?q=` | type-ahead suggestions |
 | GET | `/api/search?q=&retriever=&top_k=` | retrieval only |
 | GET | `/api/library?page=&limit=&search=` | browse the indexed corpus |
@@ -83,6 +83,8 @@ config.py           all tunable parameters and paths
 ## IR components
 
 - **Link analysis**: topics link to the topics their text mentions (4,774 topics, 36,791 links). PageRank is global; HITS runs on a query-specific base set. On held-out questions nDCG@10 went from 0.316 to 0.330 (p = 0.11, not significant); see `eval/model_comparison/link_results.json`.
+- **Rocchio relevance feedback**: "More like this / Not relevant" on each source re-runs the search with `q' = q + 0.75·mean(relevant) − 0.15·mean(not relevant)`, in both the TF-IDF and the dense space; passages marked not relevant are hidden. Simulated on the evaluation questions (residual collection) it raised nDCG@10 from 0.274 to 0.365 (p < 0.001, all three languages). Automatic pseudo-relevance feedback is implemented but **off**: +0.007, not significant, and it caused 2 extra "I don't know" answers in English. See `eval/model_comparison/rocchio_results.json`.
+- **Related topics**: up to three links under each database answer. Topic-sensitive (personalised) PageRank restarts at the topics of the *cited* passages; candidates are ranked by lift over global PageRank, mutual links come first, generic hubs (top 1% in-degree) and crisis topics are excluded, and a dense-similarity check drops loose links. Chosen by inspecting real queries, not by a benchmark.
 
 - **Sparse**: inverted index with positional-free postings, SMART `lnc.ltc` cosine scoring, optional champion lists.
 - **BM25**: Okapi BM25 (`k1=1.2`, `b=0.75`) over the same index.
